@@ -4,14 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SentinelX - Autonomous Multi-Agent Security Operations Center</title>
-  <meta name="description" content="SentiX: Autonomous Multi-Agent Security Operations Center (SOC) implementing IEEE Access 2025 cross-domain threat detection and correlation.">
+  <meta name="description" content="SentinelX: AI-Driven Multi-Agent Threat Detection and Containment Mesh">
   <link rel="stylesheet" href="/static/vendor/leaflet.css">
   <link rel="stylesheet" href="/static/css/styles.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>">
 </head>
 <body>
   <div id="app-container">
-    <!-- MASTER HEADER (Slide 11 Replica) -->
+    <!-- MASTER HEADER (Replicating Slide 11) -->
     <header class="soc-header">
       <div class="brand-section">
         <div class="brand-shield-icon">🛡</div>
@@ -29,16 +29,16 @@
           <span>⚡</span> SOC Console
         </button>
         <button class="nav-tab-btn" data-tab="pane-agent-mesh">
-          <span>⚙</span> Agent Mesh &amp; Ledger
+          <span>⚙</span> Agent Mesh Pipeline
         </button>
-        <button class="nav-tab-btn" data-tab="pane-studio">
-          <span>🔍</span> Correlation Studio
+        <button class="nav-tab-btn" data-tab="pane-slack-pager">
+          <span>🔔</span> Slack &amp; PagerDuty
         </button>
-        <button class="nav-tab-btn" data-tab="pane-integrations">
-          <span>🔗</span> Integrations
+        <button class="nav-tab-btn" data-tab="pane-playbooks">
+          <span>📋</span> Playbook Builder
         </button>
-        <button class="nav-tab-btn" id="btn-open-sim" style="color:#fbbf24;">
-          <span>🧪</span> Simulation Lab
+        <button class="nav-tab-btn" id="btn-open-sim" style="color:#fbbf24;border-color:rgba(245,158,11,0.3);">
+          <span>🧪</span> Run Simulation
         </button>
       </nav>
 
@@ -131,14 +131,14 @@
             </div>
           </div>
 
-          <!-- RIGHT: AI INVESTIGATION DOSSIER -->
+          <!-- RIGHT: AI INVESTIGATION DOSSIER (Slide 11) -->
           <div class="soc-panel">
             <div class="soc-panel-header">
               <div class="panel-heading">
                 <span style="color:#f59e0b;">⚙</span> INVESTIGATION DOSSIER (AI AGENT)
               </div>
               <div style="display:flex;gap:8px;align-items:center;">
-                <span class="tag-stream" style="color:#34d399;border-color:#10b981;">✦ LLaMA 3.3-70B Versatile</span>
+                <span class="tag-stream" style="color:#34d399;border-color:#10b981;">✦ Gemini 3.6 Flash / Multi-Agent</span>
                 <span class="tag-stream" id="dossier-alert-id" style="color:#94a3b8;border-color:#2a3b5c;">0ae0f1da...</span>
               </div>
             </div>
@@ -176,7 +176,7 @@
                 </div>
               </div>
 
-              <!-- RISK PROGRESS METRICS -->
+              <!-- RISK PROGRESS METRICS (Slide 10 Formula & Slide 11 Gauges) -->
               <div class="gauges-card">
                 <div class="gauge-item">
                   <div class="gauge-head">
@@ -204,7 +204,7 @@
                 </div>
               </div>
 
-              <!-- THREAT INTEL TRIPLET -->
+              <!-- THREAT INTEL TRIPLET (VirusTotal, AbuseIPDB, OTX Pulses) -->
               <div class="intel-triplet">
                 <div class="intel-cell">
                   <span class="intel-cell-name">VirusTotal</span>
@@ -262,7 +262,7 @@
             </div>
           </div>
 
-          <!-- AUTOMATED RESPONSE ORCHESTRATION -->
+          <!-- AUTOMATED RESPONSE ORCHESTRATION (Slide 12) -->
           <div class="orch-master-panel" style="grid-column: 1 / -1;">
             <div class="orch-header-row">
               <div>
@@ -344,7 +344,7 @@
       <!-- TAB 2: AGENT MESH & LEDGER (Slide 13)      -->
       <!-- ========================================== -->
       <div class="tab-pane" id="pane-agent-mesh">
-        <!-- 12 AGENTS PIPELINE -->
+        <!-- 12 AGENTS PIPELINE (Slide 13) -->
         <div class="soc-panel">
           <div class="soc-panel-header">
             <div class="panel-heading">
@@ -357,7 +357,7 @@
           </div>
         </div>
 
-        <!-- ACTION HISTORY - CONTAINMENT LEDGER -->
+        <!-- ACTION HISTORY - CONTAINMENT LEDGER (Slide 13) -->
         <div class="soc-panel">
           <div class="soc-panel-header">
             <div class="panel-heading">
@@ -386,131 +386,92 @@
       </div>
 
       <!-- ========================================== -->
-      <!-- TAB 3: CORRELATION STUDIO                  -->
+      <!-- TAB 3: SLACK & PAGERDUTY DISPATCH          -->
       <!-- ========================================== -->
-      <div class="tab-pane" id="pane-studio">
-        <div class="studio-grid">
-          <div class="soc-panel">
-            <div class="soc-panel-header">
-              <div class="panel-heading">
-                <span>🧪</span> TASK DISPATCHER &amp; INGESTION STUDIO
-              </div>
-              <span class="tag-stream">Fig. 2 Dispatcher</span>
-            </div>
-            <div class="studio-form">
-              <div style="font-size:11.5px;color:var(--text-secondary);">
-                Submit custom telemetry or load pre-indexed academic benchmark datasets (SpamAssassin, CIC-IDS 2017, NVD CVE scans).
-              </div>
-              <div class="sample-pills-row">
-                <button class="btn-sample" id="btn-sample-email">Load Phishing Email Sample</button>
-                <button class="btn-sample" id="btn-sample-log">Load CIC-IDS Log Sequence</button>
-                <button class="btn-sample" id="btn-sample-ip">Load 192.168.14.0/24 Subnet</button>
-              </div>
-              <textarea id="studio-input" class="studio-input-area" placeholder="Paste custom JSON or raw payload here..."></textarea>
-              <button class="btn-launch-sim" id="btn-submit-studio">RUN AGENT ANALYSIS</button>
-            </div>
-          </div>
-
-          <div class="soc-panel">
-            <div class="soc-panel-header">
-              <div class="panel-heading">
-                <span>🤖</span> AGENT REASONING &amp; CORRELATION OUTPUT
-              </div>
-              <span class="tag-stream">JSON Telemetry</span>
-            </div>
-            <div style="padding:18px;">
-              <pre id="studio-output" style="background:#070b13;border:1px solid #1a253c;border-radius:6px;padding:14px;color:#38bdf8;font-family:var(--font-mono);font-size:11px;overflow-x:auto;max-height:480px;">// Submit a task on the left to inspect domain agent analysis and cross-context correlation in real time.</pre>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ========================================== -->
-      <!-- TAB 4: INTEGRATIONS & API KEYS             -->
-      <!-- ========================================== -->
-      <div class="tab-pane" id="pane-integrations">
-        <div class="soc-panel" style="max-width:850px;margin:0 auto;width:100%;">
+      <div class="tab-pane" id="pane-slack-pager">
+        <div class="soc-panel" style="max-width:900px;margin:0 auto;width:100%;">
           <div class="soc-panel-header">
             <div class="panel-heading">
-              <span>🔗</span> REAL-WORLD SECURITY INTEGRATIONS &amp; AI ENGINES
+              <span style="color:#38bdf8;">🔔</span> SLACK &amp; PAGERDUTY LIVE DISPATCH STREAM
             </div>
-            <span class="tag-stream" id="badge-active-engine" style="color:#10b981;border-color:#10b981;">Engine: Initializing...</span>
+            <span class="tag-stream" style="color:#10b981;border-color:#10b981;">Webhook Active</span>
           </div>
-          <div style="padding:24px;display:flex;flex-direction:column;gap:20px;">
-            <div style="font-size:12.5px;color:var(--text-secondary);line-height:1.6;">
-              Connect your free AI model key (either <strong>Google Gemini</strong> or <strong>Groq LLaMA 3.3-70B</strong>) to enable live real-world semantic reasoning across all domain agents. You can paste your key below or paste it in the chat!
+          <div style="padding:20px;display:flex;flex-direction:column;gap:16px;">
+            <div style="font-size:12px;color:var(--text-secondary);">
+              All high-severity and critical correlated incidents are automatically broadcast to your operations channel:
             </div>
-
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-              <!-- Google Gemini Key -->
-              <div style="background:#080d17;border:1px solid #1a253c;padding:16px;border-radius:8px;display:flex;flex-direction:column;gap:8px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <strong style="font-size:13px;color:#fff;">Google Gemini API (Free)</strong>
-                  <span id="gemini-status-tag" style="font-family:var(--font-mono);font-size:10px;color:#94a3b8;">● STANDALONE</span>
-                </div>
-                <div style="font-size:11px;color:#64748b;">Get free at <em>aistudio.google.com</em>. Powers live threat Chain-of-Thought reasoning.</div>
-                <input type="password" id="input-gemini-key" class="search-field" placeholder="AIzaSy..." style="background:#0b1120;">
-                <button class="btn-exec-action" id="btn-save-gemini" style="align-self:flex-start;margin-top:4px;">Save Gemini Key</button>
+            <div style="background:#070b13;border:1px solid #1a253c;border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:12px;">
+              <div style="display:flex;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.05);padding-bottom:10px;">
+                <span style="font-family:var(--font-mono);color:#fca5a5;font-weight:700;">[P1 CRITICAL ALERT] Multi-Vector APT Intrusion</span>
+                <span style="font-family:var(--font-mono);font-size:11px;color:#64748b;">Just now • Channel #soc-alerts</span>
               </div>
-
-              <!-- Groq Key -->
-              <div style="background:#080d17;border:1px solid #1a253c;padding:16px;border-radius:8px;display:flex;flex-direction:column;gap:8px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <strong style="font-size:13px;color:#fff;">Groq LLaMA 3.3-70B (Free)</strong>
-                  <span id="groq-status-tag" style="font-family:var(--font-mono);font-size:10px;color:#94a3b8;">● STANDALONE</span>
-                </div>
-                <div style="font-size:11px;color:#64748b;">Get free at <em>console.groq.com</em>. Ultra-fast LLaMA 3.3-70B cloud inference.</div>
-                <input type="password" id="input-groq-key" class="search-field" placeholder="gsk_..." style="background:#0b1120;">
-                <button class="btn-exec-action" id="btn-save-groq" style="align-self:flex-start;margin-top:4px;">Save Groq Key</button>
+              <div style="font-family:var(--font-mono);font-size:11.5px;color:#cbd5e1;line-height:1.6;">
+                <strong>Incident ID:</strong> 3be282e8-2d03-4882-b589-fe2785f071e0<br>
+                <strong>Attacker IP:</strong> 185.220.101.5 (AbuseIPDB Score: 100%, VirusTotal: 11/72 Malicious)<br>
+                <strong>Target Asset:</strong> 10.0.4.10 (Core-DB)<br>
+                <strong>Automated Action:</strong> Auto-Contain-10 dropped perimeter traffic &amp; Cerberus-Core-05 severed network sockets.
               </div>
-
-              <!-- VirusTotal API -->
-              <div style="background:#080d17;border:1px solid #1a253c;padding:16px;border-radius:8px;display:flex;flex-direction:column;gap:8px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <strong style="font-size:13px;color:#fff;">VirusTotal v3 (Free)</strong>
-                  <span style="font-family:var(--font-mono);font-size:10px;color:#fbbf24;">● MOCK SEED READY</span>
-                </div>
-                <div style="font-size:11px;color:#64748b;">Get free at <em>virustotal.com</em>. Malware hash and URL scanning across 70+ engines.</div>
-                <input type="password" id="input-vt-key" class="search-field" placeholder="vt_api_key_..." style="background:#0b1120;">
-                <button class="btn-exec-action" id="btn-save-vt" style="align-self:flex-start;margin-top:4px;">Save VT Key</button>
-              </div>
-
-              <!-- AbuseIPDB API -->
-              <div style="background:#080d17;border:1px solid #1a253c;padding:16px;border-radius:8px;display:flex;flex-direction:column;gap:8px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <strong style="font-size:13px;color:#fff;">AbuseIPDB (Free)</strong>
-                  <span style="font-family:var(--font-mono);font-size:10px;color:#fbbf24;">● MOCK SEED READY</span>
-                </div>
-                <div style="font-size:11px;color:#64748b;">Get free at <em>abuseipdb.com</em> (1000 free checks/day). External IP abuse score.</div>
-                <input type="password" id="input-abuse-key" class="search-field" placeholder="abuse_key_..." style="background:#0b1120;">
-                <button class="btn-exec-action" id="btn-save-abuse" style="align-self:flex-start;margin-top:4px;">Save AbuseIPDB Key</button>
+              <div style="display:flex;gap:10px;margin-top:6px;">
+                <span style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid #10b981;padding:3px 8px;border-radius:4px;font-family:var(--font-mono);font-size:10px;">✓ EDR ISOLATED</span>
+                <span style="background:rgba(239,68,68,0.15);color:#f87171;border:1px solid #ef4444;padding:3px 8px;border-radius:4px;font-family:var(--font-mono);font-size:10px;">✓ FIREWALL BLOCKED</span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
+      <!-- ========================================== -->
+      <!-- TAB 4: PLAYBOOK BUILDER                   -->
+      <!-- ========================================== -->
+      <div class="tab-pane" id="pane-playbooks">
+        <div class="soc-panel" style="max-width:900px;margin:0 auto;width:100%;">
+          <div class="soc-panel-header">
+            <div class="panel-heading">
+              <span style="color:#f59e0b;">📋</span> AUTONOMOUS CONTAINMENT PLAYBOOKS
+            </div>
+            <span class="tag-stream" style="color:#38bdf8;border-color:#38bdf8;">Enforced Policy: Active</span>
+          </div>
+          <div style="padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div style="background:#070b13;border:1px solid #1a253c;border-radius:8px;padding:16px;">
+              <div style="font-weight:700;color:#fff;margin-bottom:6px;font-size:13px;">Playbook 01: Spear-phishing &amp; C2 Beacon</div>
+              <div style="font-size:11px;color:#94a3b8;line-height:1.5;">Triggered when Email Agent flags deceptive domain and Log Agent captures reverse beacon within 5 minutes. Automatically blocks C2 IP at perimeter firewall.</div>
+            </div>
+            <div style="background:#070b13;border:1px solid #1a253c;border-radius:8px;padding:16px;">
+              <div style="font-weight:700;color:#fff;margin-bottom:6px;font-size:13px;">Playbook 02: Gateway RCE &amp; Kerberoasting</div>
+              <div style="font-size:11px;color:#94a3b8;line-height:1.5;">Triggered when IP Agent detects unpatched critical CVE and Log Agent captures abnormal Kerberos TGS-REQ downgrade to RC4 cipher. Automatically triggers EDR host quarantine.</div>
+            </div>
+            <div style="background:#070b13;border:1px solid #1a253c;border-radius:8px;padding:16px;">
+              <div style="font-weight:700;color:#fff;margin-bottom:6px;font-size:13px;">Playbook 03: Brute Force &amp; Privilege Escalation</div>
+              <div style="font-size:11px;color:#94a3b8;line-height:1.5;">Triggered when Isolation Forest anomaly index exceeds 85% with consecutive SSH failures followed by sudo execution. Revokes user session and alerts lead analyst.</div>
+            </div>
+            <div style="background:#070b13;border:1px solid #1a253c;border-radius:8px;padding:16px;">
+              <div style="font-weight:700;color:#fff;margin-bottom:6px;font-size:13px;">Playbook 04: Data Exfiltration Containment</div>
+              <div style="font-size:11px;color:#94a3b8;line-height:1.5;">Triggered when network egress bytes exceed 10x baseline to untrusted IP geolocations. Blocks egress port and generates an immutable containment ledger entry.</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
 
     <!-- SIMULATION LAB MODAL -->
     <div class="soc-modal-overlay" id="sim-modal">
       <div class="soc-modal-box">
         <div class="modal-head-row">
-          <div class="modal-head-title">🧪 SentiX Multi-Vector Attack Simulation Lab</div>
+          <div class="modal-head-title">🧪 SentiX Multi-Vector Attack Simulation</div>
           <button class="btn-modal-close" id="btn-close-modal">&times;</button>
         </div>
         <p style="font-size:12px;color:#94a3b8;line-height:1.5;">
-          Executes a synchronized multi-vector Advanced Persistent Threat (APT) intrusion scenario across 
+          Executes a synchronized multi-vector attack scenario across 
           <strong>Email Verification</strong>, <strong>Log Analyzer</strong>, and <strong>IP Range Analyzer</strong> agents, 
-          triggering the <strong>Contextual Recommendation System</strong> and automated perimeter containment in real time.
+          triggering the <strong>Contextual Recommendation System</strong> and automated containment.
         </p>
 
         <div style="background:#070b13;padding:14px;border-radius:8px;border:1px solid #1a253c;font-family:var(--font-mono);font-size:11px;color:#38bdf8;line-height:1.6;">
-          <div style="color:#fbbf24;font-weight:700;margin-bottom:4px;">Scenario: Coordinated Multi-Vector APT Campaign</div>
-          <div>1. Spear-phishing lure with malicious redirect from 185.220.101.5</div>
+          <div style="color:#fbbf24;font-weight:700;margin-bottom:4px;">Kill Chain Sequence:</div>
+          <div>1. Spear-phishing lure referencing C2 185.220.101.5</div>
           <div>2. High-frequency brute force &amp; heap corruption on 10.0.4.10 from 203.175.188.1</div>
           <div>3. Network range scan of 192.168.14.0/24 mapping CVE-2024-38077 (CVSS 9.8)</div>
-          <div>4. Contextual cross-domain correlation (87% confidence) &amp; autonomous containment</div>
+          <div>4. Multi-agent cross-domain correlation (87% confidence) &amp; autonomous containment</div>
         </div>
 
         <button class="btn-launch-sim" id="btn-run-sim-action">

