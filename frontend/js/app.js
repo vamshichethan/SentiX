@@ -493,9 +493,9 @@ function initLeafletAttackMap() {
             attributionControl: false
         });
 
-        L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-            subdomains: "abcd",
-            maxZoom: 19
+        L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}", {
+            maxZoom: 16,
+            attribution: "Esri"
         }).addTo(leafletMapInstance);
 
         const attackVectors = [
