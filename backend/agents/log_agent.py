@@ -116,6 +116,24 @@ class LogAnalyzerAgent:
         signature_matches = self.match_signatures(normalized)
 
         # 3. Machine Learning Anomaly Detection (Isolation Forest + Autoencoder)
+        extracted_ips = list({ev["src_ip"] for ev in normalized if ev["src_ip"] not in ["0.0.0.0", "127.0.0.1"]})
+        
+        # Live Threat Intelligence lookup
+        from backend.integrations.abuseipdb import abuseipdb_client
+        from backend.integrations.virustotal import virustotal_client
+        live_abuse = None
+        live_vt = None
+        intel_score = 1.0
+
+        if extracted_ips:
+            target_ip = extracted_ips[0]
+            live_abuse = abuseipdb_client.check_ip(target_ip)
+            live_vt = virustotal_client.check_ip(target_ip)
+            if live_abuse and live_abuse.get("abuse_score", 0) > 0:
+                intel_score = live_abuse["abuse_score"] / 10.0
+            elif signature_matches:
+                intel_score = 8.5
+
         event_telemetry = {
             "bytes_in": log_data.get("bytes_in", 65000 if signature_matches else 1200),
             "bytes_out": log_data.get("bytes_out", 180000 if signature_matches else 2400),
@@ -124,10 +142,11 @@ class LogAnalyzerAgent:
             "privilege_reqs": log_data.get("privilege_reqs", len([m for m in signature_matches if "SID-2003" in m["signature_id"] or "SID-2004" in m["signature_id"]])),
             "distinct_dest_ports": log_data.get("distinct_dest_ports", 4 if signature_matches else 1),
             "severity": "CRITICAL" if any(m["severity"] == "CRITICAL" for m in signature_matches) else "HIGH" if signature_matches else "LOW",
-            "threat_intel_score": 8.5 if signature_matches else 1.0,
+            "threat_intel_score": intel_score,
             "asset_criticality": 0.9,
             "frequency": len(signature_matches) or 1
         }
+
 
         risk_calc = anomaly_engine.calculate_risk_score(event_telemetry)
 
@@ -189,8 +208,11 @@ Analyze this security log sequence:
             "mitre_technique": primary_technique,
             "tactics": llm_result.get("tactics", ["Initial Access", "Privilege Escalation"]),
             "extracted_ips": extracted_ips,
+            "vt_score": live_vt.get("vt_score") if live_vt else "8/72",
+            "abuse_score": live_abuse.get("abuse_score_str") if live_abuse else "34% (Suspicious)",
             "llm_engine": llm_result.get("llm_engine", "SentiX Semantic Engine")
         }
+
 
 
 # Singleton instance

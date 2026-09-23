@@ -5,12 +5,29 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "backend" / "data"
 DB_PATH = BASE_DIR / "sentix_soc.db"
 
+# Load .env file if present
+ENV_PATH = BASE_DIR / ".env"
+if ENV_PATH.exists():
+    with open(ENV_PATH, "r") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, v = line.split("=", 1)
+                os.environ.setdefault(k.strip(), v.strip())
+
 # LLM Configuration
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
+
+
+# Live External Threat Intelligence Feeds
+ABUSEIPDB_API_KEY = os.getenv("ABUSEIPDB_API_KEY", "")
+VIRUSTOTAL_API_KEY = os.getenv("VIRUSTOTAL_API_KEY", "")
+NIST_NVD_API_KEY = os.getenv("NIST_NVD_API_KEY", "")
+
 
 
 # Risk Scoring Weights (from Slide 10: Risk Scoring Algorithm)

@@ -93,28 +93,26 @@ class IPRangeAnalyzerAgent:
         ]
 
     def enrich_cves(self, hosts: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Map discovered service CVEs with CVSS vectors from NVD."""
+        """Map discovered service CVEs with CVSS vectors from live NIST NVD database."""
+        from backend.integrations.nvd import nvd_client
         enriched_cves = []
         for host in hosts:
             for s in host.get("services", []):
                 for cve_str in s.get("cves", []):
                     cve_id = cve_str.split()[0]
-                    nvd_entry = self.known_cves.get(cve_id, {
-                        "title": f"Vulnerability {cve_id}",
-                        "cvss_v3": 8.5,
-                        "severity": "HIGH",
-                        "description": "Exploitable vulnerability detected in exposed service daemon."
-                    })
+                    live_nvd = nvd_client.get_cve(cve_id)
                     enriched_cves.append({
                         "host": host["ip"],
                         "port": s["port"],
                         "service": s["service"],
                         "cve_id": cve_id,
-                        "cvss_score": nvd_entry.get("cvss_v3", 8.5),
-                        "severity": nvd_entry.get("severity", "HIGH"),
-                        "description": nvd_entry.get("description", "")
+                        "cvss_score": live_nvd.get("cvss_score", 8.5),
+                        "severity": live_nvd.get("severity", "HIGH"),
+                        "description": live_nvd.get("description", "Vulnerability detected in exposed service."),
+                        "live_nvd_source": live_nvd.get("live_query", False)
                     })
         return enriched_cves
+
 
     def process(self, ip_data: Dict[str, Any]) -> Dict[str, Any]:
         target = ip_data.get("target") or ip_data.get("range") or "192.168.14.0/24"
