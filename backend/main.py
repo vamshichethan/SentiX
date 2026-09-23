@@ -6,7 +6,7 @@ FastAPI Backend Gateway & Orchestrator
 import os
 from pathlib import Path
 from typing import Dict, Any, Optional, List
-from fastapi import FastAPI, HTTPException, Query, Body
+from fastapi import FastAPI, HTTPException, Query, Body, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
@@ -83,9 +83,11 @@ def startup_event():
     init_db()
 
 
+api_router = APIRouter()
+
 # ---------------- API ENDPOINTS ---------------- #
 
-@app.get("/api/health")
+@api_router.get("/health")
 def health_check():
     return {
         "status": "OPERATIONAL",
@@ -96,12 +98,12 @@ def health_check():
     }
 
 
-@app.get("/api/stats")
+@api_router.get("/stats")
 def get_soc_statistics():
     return get_stats()
 
 
-@app.get("/api/samples")
+@api_router.get("/samples")
 def get_sample_datasets():
     """Returns sample benchmark data for one-click testing."""
     return {
@@ -112,7 +114,7 @@ def get_sample_datasets():
     }
 
 
-@app.get("/api/settings/keys")
+@api_router.get("/settings/keys")
 def get_key_status():
     from backend.agents.llm_client import llm_client
     return {
@@ -122,7 +124,7 @@ def get_key_status():
     }
 
 
-@app.post("/api/settings/keys")
+@api_router.post("/settings/keys")
 def update_api_keys(payload: KeysPayload):
     from backend.agents.llm_client import llm_client
     env_file = Path(__file__).resolve().parent.parent / ".env"
@@ -170,32 +172,31 @@ def update_api_keys(payload: KeysPayload):
     }
 
 
-
-@app.post("/api/dispatch")
+@api_router.post("/dispatch")
 def dispatch_task(payload: Dict[str, Any]):
     """Task Dispatcher Agent (Fig 2 of paper) validates and routes request."""
     return dispatcher_agent.dispatch(payload)
 
 
-@app.post("/api/email/analyze")
+@api_router.post("/email/analyze")
 def analyze_email(payload: Dict[str, Any]):
     """Email Verification Agent (Fig 3 of paper)."""
     return email_agent.process(payload)
 
 
-@app.post("/api/logs/analyze")
+@api_router.post("/logs/analyze")
 def analyze_logs(payload: Dict[str, Any]):
     """Log Analyzer Agent (Fig 4 of paper)."""
     return log_agent.process(payload)
 
 
-@app.post("/api/ip/scan")
+@api_router.post("/ip/scan")
 def scan_ip_range(payload: Dict[str, Any]):
     """IP Range Analyzer Agent (Fig 5 of paper)."""
     return ip_agent.process(payload)
 
 
-@app.post("/api/correlate")
+@api_router.post("/correlate")
 def correlate_threats(payload: CorrelatePayload):
     """Contextual Recommendation System (Fig 6 of paper)."""
     email_res = None
@@ -217,13 +218,13 @@ def correlate_threats(payload: CorrelatePayload):
     return result
 
 
-@app.get("/api/alerts")
+@api_router.get("/alerts")
 def list_alerts(severity: Optional[str] = Query(None)):
     """Slide 11 Live Alert Stream."""
     return get_all_alerts(limit=50, severity_filter=severity)
 
 
-@app.get("/api/alerts/{alert_id}")
+@api_router.get("/alerts/{alert_id}")
 def get_alert_dossier(alert_id: str):
     """Slide 11 AI Investigation Dossier details."""
     alert = get_alert_by_id(alert_id)
@@ -232,19 +233,19 @@ def get_alert_dossier(alert_id: str):
     return alert
 
 
-@app.get("/api/agents/status")
+@api_router.get("/agents/status")
 def get_mesh_status():
     """Slide 13 Autonomous Agent Mesh Pipeline status."""
     return get_agent_mesh()
 
 
-@app.get("/api/actions/history")
+@api_router.get("/actions/history")
 def get_containment_history():
     """Slide 13 Action History - Containment Ledger."""
     return get_containment_ledger(limit=50)
 
 
-@app.post("/api/actions/execute")
+@api_router.post("/actions/execute")
 def execute_response_action(payload: ActionPayload):
     """Slide 12 Automated Response Orchestration handler."""
     return response_agent.execute_action(
@@ -256,7 +257,7 @@ def execute_response_action(payload: ActionPayload):
     )
 
 
-@app.post("/api/simulation/run")
+@api_router.post("/simulation/run")
 def trigger_attack_simulation():
     """
     Executes an end-to-end multi-vector attack scenario:
@@ -298,6 +299,10 @@ def trigger_attack_simulation():
         "correlated_incident": correlated,
         "automated_containment": [action_1, action_2]
     }
+
+# Include routes both with and without /api prefix
+app.include_router(api_router, prefix="/api")
+app.include_router(api_router)
 
 
 # Static Frontend Mount & Root Index

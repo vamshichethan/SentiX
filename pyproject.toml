@@ -1,0 +1,17 @@
+[project]
+name = "sentix"
+version = "2.0.0"
+description = "SentiX - Autonomous Multi-Agent SOC"
+requires-python = ">=3.9"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn>=0.30.0",
+    "scikit-learn>=1.5.0",
+    "numpy>=1.26.0",
+    "requests>=2.31.0",
+    "httpx>=0.27.0",
+    "pydantic>=2.7.0"
+]
+
+[tool.vercel]
+entrypoint = "backend.main:app"

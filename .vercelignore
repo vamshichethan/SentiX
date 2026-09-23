@@ -1,0 +1,11 @@
+.venv
+venv
+.git
+.idea
+.vscode
+tests/
+sentix_soc.db
+*.pyc
+__pycache__
+.DS_Store
+*.log

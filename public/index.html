@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SentiX - Autonomous AI Cybersecurity SOC</title>
+  <meta name="description" content="SentiX: Modern, Autonomous Multi-Agent Cybersecurity Platform for Real-Time Threat Detection & Automated Defense">
+  <link rel="stylesheet" href="/static/vendor/leaflet.css">
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>">
+</head>
+<body>
+
+  <!-- APP SHELL -->
+  <div class="app-container">
+
+    <!-- TOP NAVIGATION BAR -->
+    <header class="top-navbar">
+      <div class="nav-brand">
+        <div class="brand-logo">🛡️</div>
+        <div>
+          <div class="brand-title">SentiX <span class="brand-tag">AI SOC</span></div>
+          <div class="brand-subtitle">Autonomous Security Operations</div>
+        </div>
+      </div>
+
+      <!-- MAIN PAGE TABS -->
+      <nav class="nav-tabs" id="main-nav-tabs">
+        <button class="nav-tab-btn active" data-page="page-overview">
+          <span class="tab-icon">📊</span>
+          <span class="tab-label">Overview</span>
+        </button>
+        <button class="nav-tab-btn" data-page="page-alerts">
+          <span class="tab-icon">🚨</span>
+          <span class="tab-label">Threat Alerts</span>
+        </button>
+        <button class="nav-tab-btn" data-page="page-map">
+          <span class="tab-icon">🗺️</span>
+          <span class="tab-label">Live Threat Map</span>
+        </button>
+        <button class="nav-tab-btn" data-page="page-agents">
+          <span class="tab-icon">🤖</span>
+          <span class="tab-label">AI Agents</span>
+        </button>
+        <button class="nav-tab-btn" data-page="page-ledger">
+          <span class="tab-icon">📜</span>
+          <span class="tab-label">Action History</span>
+        </button>
+        <button class="nav-tab-btn" data-page="page-simulator">
+          <span class="tab-icon">🧪</span>
+          <span class="tab-label">Attack Simulator</span>
+        </button>
+      </nav>
+
+      <!-- TOP RIGHT ACTIONS -->
+      <div class="nav-actions">
+        <div class="status-indicator">
+          <span class="pulse-dot"></span>
+          <span>Shield Active</span>
+        </div>
+        <div class="clock-display" id="utc-clock-time">2026-09-23 00:00:00 UTC</div>
+        <button class="btn-top-sim" id="btn-quick-sim">
+          <span>⚡</span> Test Attack
+        </button>
+      </div>
+    </header>
+
+    <!-- MAIN CONTENT VIEWPORT -->
+    <main class="content-viewport">
+
+      <!-- ============================================== -->
+      <!-- PAGE 1: OVERVIEW DASHBOARD                     -->
+      <!-- ============================================== -->
+      <section class="page-view active" id="page-overview">
+        <!-- WELCOME BANNER -->
+        <div class="hero-banner">
+          <div class="hero-content">
+            <span class="hero-pill">Autonomous Real-Time Protection</span>
+            <h1 class="hero-title">Security Center Overview</h1>
+            <p class="hero-desc">
+              All multi-agent defensive pipelines are actively monitoring network traffic, email inboxes, and server logs. High-confidence threats are neutralized autonomously within seconds.
+            </p>
+          </div>
+          <div class="hero-actions">
+            <button class="btn-primary" onclick="switchPage('page-simulator')">
+              <span>🧪</span> Run Attack Simulation
+            </button>
+            <button class="btn-secondary" onclick="switchPage('page-alerts')">
+              <span>🚨</span> View All Alerts
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 SIMPLE KEY METRICS -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon-wrapper red">🛡️</div>
+            <div class="stat-content">
+              <div class="stat-label">Active Threats</div>
+              <div class="stat-number" id="stat-critical">10</div>
+              <div class="stat-hint">Flagged by AI reasoning</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon-wrapper green">🔒</div>
+            <div class="stat-content">
+              <div class="stat-label">Threats Contained</div>
+              <div class="stat-number" id="stat-contained">16</div>
+              <div class="stat-hint">Auto-blocked at perimeter</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon-wrapper blue">⚡</div>
+            <div class="stat-content">
+              <div class="stat-label">Average Risk Score</div>
+              <div class="stat-number" id="stat-risk">87 <span style="font-size:16px;font-weight:500;color:var(--text-muted)">/ 100</span></div>
+              <div class="stat-hint">Across active threat vectors</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon-wrapper purple">⏱️</div>
+            <div class="stat-content">
+              <div class="stat-label">Response Time</div>
+              <div class="stat-number" id="stat-mttr">41s</div>
+              <div class="stat-hint">Detection to firewall block</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2 SIMPLE SECTIONS: RECENT THREATS & ONE-CLICK DEFENSE -->
+        <div class="two-column-grid">
+          <!-- RECENT THREATS -->
+          <div class="section-card">
+            <div class="section-header">
+              <div>
+                <h2 class="section-title">🚨 Recent Priority Alerts</h2>
+                <div class="section-sub">Latest threats intercepted by SentiX AI agents</div>
+              </div>
+              <button class="link-btn" onclick="switchPage('page-alerts')">View All →</button>
+            </div>
+            <div class="alerts-simple-list" id="overview-recent-alerts">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- SYSTEM DEFENSE STATUS & QUICK ACTIONS -->
+          <div class="section-card">
+            <div class="section-header">
+              <div>
+                <h2 class="section-title">🛡️ Defense Center</h2>
+                <div class="section-sub">Autonomous response and host protection</div>
+              </div>
+              <span class="status-badge green">Protected</span>
+            </div>
+
+            <div class="defense-status-body">
+              <div class="agent-summary-pills">
+                <div class="summary-pill">
+                  <span class="pill-label">Active Agents</span>
+                  <span class="pill-value green">12 / 12 Online</span>
+                </div>
+                <div class="summary-pill">
+                  <span class="pill-label">Events Processed</span>
+                  <span class="pill-value blue" id="stat-events-today">18,513</span>
+                </div>
+              </div>
+
+              <div class="defense-info-box">
+                <strong>How SentiX Protects You:</strong>
+                <p>When an attacker probes your network or sends a phishing lure, SentiX agents analyze the threat across multiple sources and immediately block the attacker IP without waiting for human intervention.</p>
+              </div>
+
+              <div class="quick-action-buttons">
+                <button class="btn-danger-outline" onclick="executeAction('BLOCK_IP', '185.220.101.5')">
+                  🛑 Block Known Attacker (185.220.101.5)
+                </button>
+                <button class="btn-warning-outline" onclick="executeAction('ISOLATE_HOST', '10.0.4.10')">
+                  🔒 Isolate Critical Host (10.0.4.10)
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- PAGE 2: THREAT ALERTS (CLEAN LIST & DETAILS)   -->
+      <!-- ============================================== -->
+      <section class="page-view" id="page-alerts">
+        <div class="page-intro">
+          <div>
+            <h1 class="page-main-heading">Live Threat Alerts</h1>
+            <p class="page-main-sub">Review incidents, inspect AI reasoning, and execute containment actions.</p>
+          </div>
+          <div class="sev-filter-bar">
+            <button class="filter-tab active" data-sev="ALL">All Alerts</button>
+            <button class="filter-tab" data-sev="CRITICAL">Critical</button>
+            <button class="filter-tab" data-sev="HIGH">High</button>
+            <button class="filter-tab" data-sev="MEDIUM">Medium</button>
+          </div>
+        </div>
+
+        <div class="alerts-split-layout">
+          <!-- LEFT: CLEAN ALERT LIST -->
+          <div class="alert-list-container">
+            <div class="search-wrap">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="search-alerts" class="search-input" placeholder="Search by IP, title, or asset...">
+            </div>
+            <div class="alert-cards-scroll" id="alert-stream-list">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- RIGHT: CLEAN THREAT DOSSIER -->
+          <div class="alert-detail-container">
+            <div class="detail-header-card">
+              <div class="detail-top-meta">
+                <span class="category-chip" id="dossier-cat-badge">CORRELATED INCIDENT</span>
+                <span class="ai-chip">🤖 AI Verified</span>
+              </div>
+              <h2 class="detail-title" id="dossier-title">Select an alert to view investigation</h2>
+
+              <div class="detail-action-bar">
+                <button class="btn-danger" id="btn-edr-isolate">
+                  🔒 Isolate Host
+                </button>
+                <button class="btn-primary" onclick="executeAction('BLOCK_IP', selectedAlert ? (selectedAlert.src_ip || '185.220.101.5') : '185.220.101.5')">
+                  🛑 Block Attacker IP
+                </button>
+                <button class="btn-secondary" id="btn-create-p1">
+                  📋 Create Incident Ticket
+                </button>
+                <button class="btn-secondary" id="btn-export-dossier">
+                  📥 Export JSON
+                </button>
+              </div>
+            </div>
+
+            <!-- KEY TELEMETRY CARDS -->
+            <div class="detail-telemetry-grid">
+              <div class="telemetry-card">
+                <span class="tele-label">Target Asset</span>
+                <span class="tele-val" id="meta-asset">10.0.4.10</span>
+              </div>
+              <div class="telemetry-card">
+                <span class="tele-label">Attacker IP</span>
+                <span class="tele-val text-red" id="meta-src-ip">203.175.188.1</span>
+              </div>
+              <div class="telemetry-card">
+                <span class="tele-label">Protocol</span>
+                <span class="tele-val" id="meta-protocol">HTTPS / TCP</span>
+              </div>
+              <div class="telemetry-card">
+                <span class="tele-label">Attack Technique</span>
+                <span class="tele-val" id="meta-technique">Privilege Escalation</span>
+              </div>
+            </div>
+
+            <!-- RISK & INTEL CARDS -->
+            <div class="intel-summary-cards">
+              <div class="intel-box">
+                <div class="intel-title">Risk Assessment</div>
+                <div class="intel-meter-wrapper">
+                  <div class="meter-bar-bg">
+                    <div class="meter-bar-fill red" id="bar-composite" style="width: 87%;"></div>
+                  </div>
+                  <div class="meter-labels">
+                    <span>Overall Threat Score</span>
+                    <strong id="val-composite">87 / 100</strong>
+                  </div>
+                </div>
+                <div class="intel-meter-wrapper" style="margin-top:10px;">
+                  <div class="meter-bar-bg">
+                    <div class="meter-bar-fill blue" id="bar-if" style="width: 88%;"></div>
+                  </div>
+                  <div class="meter-labels">
+                    <span>Anomaly Score (ML)</span>
+                    <strong id="val-if">88%</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div class="intel-box">
+                <div class="intel-title">External Threat Intelligence</div>
+                <div class="intel-items-list">
+                  <div class="intel-item">
+                    <span>VirusTotal Flagged</span>
+                    <strong id="intel-vt">24 / 72 Engines</strong>
+                  </div>
+                  <div class="intel-item">
+                    <span>AbuseIPDB Score</span>
+                    <strong id="intel-abuse" style="color:var(--color-danger)">89% Malicious</strong>
+                  </div>
+                  <div class="intel-item">
+                    <span>AlienVault OTX</span>
+                    <strong id="intel-otx">28 Pulses</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- AI EXPLANATION & REASONING -->
+            <div class="ai-box">
+              <div class="ai-box-title">
+                <span>🧠</span> AI Incident Explanation
+              </div>
+              <div class="ai-summary-text" id="dossier-explanation">
+                Analyzing incoming incident telemetry...
+              </div>
+              <div class="ai-steps-container" id="dossier-cot">
+                <!-- Dynamically populated steps -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- PAGE 3: LIVE GLOBAL THREAT MAP                 -->
+      <!-- ============================================== -->
+      <section class="page-view" id="page-map">
+        <div class="page-intro">
+          <div>
+            <h1 class="page-main-heading">Global Threat Map</h1>
+            <p class="page-main-sub">Live visualization of geographical attack origins targeting your network.</p>
+          </div>
+          <div class="status-indicator">
+            <span class="pulse-dot"></span>
+            <span>Real-time Geo Feed Active</span>
+          </div>
+        </div>
+
+        <div class="map-container-card">
+          <div id="leaflet-map"></div>
+        </div>
+
+        <div class="section-card" style="margin-top: 24px;">
+          <div class="section-header">
+            <div>
+              <h2 class="section-title">📈 60-Minute Attack Velocity</h2>
+              <div class="section-sub">Volume of inbound security events processed per minute</div>
+            </div>
+            <span class="status-badge blue">Streaming Real-Time</span>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="chartjs-volume-canvas"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- PAGE 4: AI AGENTS MESH                         -->
+      <!-- ============================================== -->
+      <section class="page-view" id="page-agents">
+        <div class="page-intro">
+          <div>
+            <h1 class="page-main-heading">Autonomous AI Security Team</h1>
+            <p class="page-main-sub">Specialized AI agents working in concert to detect, analyze, and contain threats.</p>
+          </div>
+          <span class="status-badge green">12 of 12 Agents Synchronized</span>
+        </div>
+
+        <div class="agent-mesh-cards" id="agent-mesh-grid">
+          <!-- Dynamically populated -->
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- PAGE 5: ACTION HISTORY LEDGER                  -->
+      <!-- ============================================== -->
+      <section class="page-view" id="page-ledger">
+        <div class="page-intro">
+          <div>
+            <h1 class="page-main-heading">Containment &amp; Action History</h1>
+            <p class="page-main-sub">Complete audit log of all automated and manual security actions executed.</p>
+          </div>
+          <span class="status-badge blue" id="ledger-count-badge">Loading ledger...</span>
+        </div>
+
+        <div class="table-card">
+          <table class="simple-table">
+            <thead>
+              <tr>
+                <th>Timestamp (UTC)</th>
+                <th>Security Action</th>
+                <th>Target IP / Device</th>
+                <th>Severity</th>
+                <th>Mode</th>
+                <th>Executed By</th>
+              </tr>
+            </thead>
+            <tbody id="ledger-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- PAGE 6: ATTACK SIMULATOR (INTERACTIVE LAB)    -->
+      <!-- ============================================== -->
+      <section class="page-view" id="page-simulator">
+        <div class="page-intro">
+          <div>
+            <h1 class="page-main-heading">Interactive Attack Simulator</h1>
+            <p class="page-main-sub">Safely test SentiX's autonomous threat detection and multi-agent containment pipeline in real time.</p>
+          </div>
+          <span class="status-badge blue">Safe Sandboxed Mode</span>
+        </div>
+
+        <div class="sim-lab-card">
+          <div class="sim-banner">
+            <div class="sim-banner-icon">🧪</div>
+            <div>
+              <h2 class="sim-banner-title">Multi-Vector Coordinated Attack Scenario</h2>
+              <p class="sim-banner-sub">
+                This test simulates a real-world APT (Advanced Persistent Threat) attack: a phishing lure sent via email, an API gateway exploit attempt, and a credential theft attempt.
+              </p>
+            </div>
+            <button class="btn-sim-large" id="btn-run-sim-action" onclick="triggerAttackSimulation()">
+              <span>🚀</span> Run Live Attack Test
+            </button>
+          </div>
+
+          <div class="sim-steps-grid">
+            <div class="sim-step-card">
+              <div class="step-num">Step 1</div>
+              <div class="step-title">Phishing Email Delivery</div>
+              <p class="step-desc">Attacker at 185.220.101.5 sends fake payroll invoice with an embedded credential-harvesting link.</p>
+              <div class="step-agent-badge">✉️ Email Agent</div>
+            </div>
+
+            <div class="sim-step-card">
+              <div class="step-num">Step 2</div>
+              <div class="step-title">Perimeter Exploit Probing</div>
+              <p class="step-desc">Attacker from 203.175.188.1 attempts buffer overflow exploit on API Gateway (10.0.4.10).</p>
+              <div class="step-agent-badge">📜 Log &amp; ML Agent</div>
+            </div>
+
+            <div class="sim-step-card">
+              <div class="step-num">Step 3</div>
+              <div class="step-title">Subnet Vulnerability Scan</div>
+              <p class="step-desc">Target subnet mapped against NIST NVD database, identifying unpatched CVEs.</p>
+              <div class="step-agent-badge">🌐 IP &amp; Vuln Agent</div>
+            </div>
+
+            <div class="sim-step-card">
+              <div class="step-num">Step 4</div>
+              <div class="step-title">Autonomous Containment</div>
+              <p class="step-desc">AI Correlation Brain correlates vectors and immediately triggers firewall IP blocks and host isolation.</p>
+              <div class="step-agent-badge">🛡️ Response Agent</div>
+            </div>
+          </div>
+
+          <div class="sim-result-box" id="sim-result-box" style="display:none;">
+            <div class="sim-result-header">
+              <span class="result-check">✅</span>
+              <div>
+                <strong style="color:#fff;font-size:16px;">Attack Successfully Neutralized!</strong>
+                <div style="color:var(--text-muted);font-size:13px;" id="sim-result-text">All vectors correlated and blocked in 1.4 seconds.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div class="toast-popup" id="toast-message"></div>
+
+  <!-- Local Vendor Scripts -->
+  <script src="/static/vendor/leaflet.js"></script>
+  <script src="/static/vendor/chart.umd.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

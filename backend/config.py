@@ -3,7 +3,17 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "backend" / "data"
-DB_PATH = BASE_DIR / "sentix_soc.db"
+if os.getenv("VERCEL"):
+    DB_PATH = Path("/tmp/sentix_soc.db")
+    source_db = BASE_DIR / "sentix_soc.db"
+    if source_db.exists() and not DB_PATH.exists():
+        import shutil
+        try:
+            shutil.copy2(source_db, DB_PATH)
+        except Exception:
+            pass
+else:
+    DB_PATH = BASE_DIR / "sentix_soc.db"
 
 # Load .env file if present
 ENV_PATH = BASE_DIR / ".env"
