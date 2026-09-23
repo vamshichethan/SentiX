@@ -9,6 +9,10 @@ DB_PATH = BASE_DIR / "sentix_soc.db"
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+
+
 # Risk Scoring Weights (from Slide 10: Risk Scoring Algorithm)
 # Risk Score = w1*IF + w2*AE + w3*Severity + w4*ThreatIntel + w5*AssetCrit + w6*Freq
 WEIGHTS = {

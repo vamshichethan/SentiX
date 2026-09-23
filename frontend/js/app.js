@@ -335,7 +335,85 @@ function setupEventListeners() {
     if (btnRunSim) {
         btnRunSim.addEventListener("click", triggerAttackSimulation);
     }
+
+    // Save Keys Handlers
+    initKeySettings();
 }
+
+async function initKeySettings() {
+    try {
+        const res = await fetch("/api/settings/keys");
+        if (res.ok) {
+            const data = await res.json();
+            const badge = document.getElementById("badge-active-engine");
+            if (badge) {
+                badge.textContent = `Active: ${data.active_engine}`;
+                badge.style.color = data.active_engine !== "Local Heuristic Engine" ? "#34d399" : "#38bdf8";
+            }
+            if (document.getElementById("gemini-status-tag")) {
+                document.getElementById("gemini-status-tag").textContent = data.gemini_active ? "● ACTIVE & CONNECTED" : "● STANDALONE";
+                document.getElementById("gemini-status-tag").style.color = data.gemini_active ? "#10b981" : "#94a3b8";
+            }
+            if (document.getElementById("groq-status-tag")) {
+                document.getElementById("groq-status-tag").textContent = data.groq_active ? "● ACTIVE & CONNECTED" : "● STANDALONE";
+                document.getElementById("groq-status-tag").style.color = data.groq_active ? "#10b981" : "#94a3b8";
+            }
+        }
+    } catch (e) {
+        console.warn("Keys status check:", e);
+    }
+
+    // Bind save buttons
+    const btnSaveGemini = document.getElementById("btn-save-gemini");
+    if (btnSaveGemini) {
+        btnSaveGemini.addEventListener("click", async () => {
+            const val = document.getElementById("input-gemini-key")?.value || "";
+            await saveKeyToServer({ gemini_api_key: val }, "Google Gemini");
+        });
+    }
+
+    const btnSaveGroq = document.getElementById("btn-save-groq");
+    if (btnSaveGroq) {
+        btnSaveGroq.addEventListener("click", async () => {
+            const val = document.getElementById("input-groq-key")?.value || "";
+            await saveKeyToServer({ groq_api_key: val }, "Groq LLaMA 3.3");
+        });
+    }
+
+    const btnSaveVt = document.getElementById("btn-save-vt");
+    if (btnSaveVt) {
+        btnSaveVt.addEventListener("click", async () => {
+            const val = document.getElementById("input-vt-key")?.value || "";
+            await saveKeyToServer({ virustotal_api_key: val }, "VirusTotal");
+        });
+    }
+
+    const btnSaveAbuse = document.getElementById("btn-save-abuse");
+    if (btnSaveAbuse) {
+        btnSaveAbuse.addEventListener("click", async () => {
+            const val = document.getElementById("input-abuse-key")?.value || "";
+            await saveKeyToServer({ abuseipdb_api_key: val }, "AbuseIPDB");
+        });
+    }
+}
+
+async function saveKeyToServer(payload, providerName) {
+    try {
+        const res = await fetch("/api/settings/keys", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+            const data = await res.json();
+            showNotification(`${providerName} key saved successfully! Active engine: ${data.active_engine}`);
+            initKeySettings();
+        }
+    } catch (e) {
+        showNotification(`Error saving key: ${e.message}`);
+    }
+}
+
 
 /* API Calls & Renderers */
 async function loadDashboardStats() {

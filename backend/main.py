@@ -69,6 +69,15 @@ class CorrelatePayload(BaseModel):
     ip_scan: Optional[Dict[str, Any]] = None
 
 
+class KeysPayload(BaseModel):
+    gemini_api_key: Optional[str] = None
+    groq_api_key: Optional[str] = None
+    virustotal_api_key: Optional[str] = None
+    abuseipdb_api_key: Optional[str] = None
+    slack_webhook_url: Optional[str] = None
+
+
+
 @app.on_event("startup")
 def startup_event():
     init_db()
@@ -101,6 +110,65 @@ def get_sample_datasets():
         "ip_scans": SAMPLE_IP_SCANS,
         "cves": NVD_DATABASE
     }
+
+
+@app.get("/api/settings/keys")
+def get_key_status():
+    from backend.agents.llm_client import llm_client
+    return {
+        "gemini_active": llm_client.is_gemini_available(),
+        "groq_active": llm_client.is_groq_available(),
+        "active_engine": "Google Gemini" if llm_client.is_gemini_available() else ("Groq LLaMA 3.3" if llm_client.is_groq_available() else "Local Heuristic Engine")
+    }
+
+
+@app.post("/api/settings/keys")
+def update_api_keys(payload: KeysPayload):
+    from backend.agents.llm_client import llm_client
+    env_file = Path(__file__).resolve().parent.parent / ".env"
+    env_lines = []
+    if env_file.exists():
+        with open(env_file, "r") as f:
+            env_lines = f.readlines()
+
+    updates = {}
+    if payload.gemini_api_key is not None:
+        key = payload.gemini_api_key.strip()
+        os.environ["GEMINI_API_KEY"] = key
+        llm_client.gemini_key = key
+        updates["GEMINI_API_KEY"] = key
+
+    if payload.groq_api_key is not None:
+        key = payload.groq_api_key.strip()
+        os.environ["GROQ_API_KEY"] = key
+        llm_client.groq_key = key
+        updates["GROQ_API_KEY"] = key
+
+    # Persist to .env
+    existing_keys = set()
+    new_content = []
+    for line in env_lines:
+        k = line.split("=")[0].strip()
+        if k in updates:
+            new_content.append(f"{k}={updates[k]}\n")
+            existing_keys.add(k)
+        else:
+            new_content.append(line)
+
+    for k, v in updates.items():
+        if k not in existing_keys:
+            new_content.append(f"{k}={v}\n")
+
+    with open(env_file, "w") as f:
+        f.writelines(new_content)
+
+    return {
+        "success": True,
+        "gemini_active": llm_client.is_gemini_available(),
+        "groq_active": llm_client.is_groq_available(),
+        "active_engine": "Google Gemini" if llm_client.is_gemini_available() else ("Groq LLaMA 3.3" if llm_client.is_groq_available() else "Local Heuristic Engine")
+    }
+
 
 
 @app.post("/api/dispatch")

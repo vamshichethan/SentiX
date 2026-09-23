@@ -429,58 +429,67 @@
       <!-- TAB 4: INTEGRATIONS & API KEYS             -->
       <!-- ========================================== -->
       <div class="tab-pane" id="pane-integrations">
-        <div class="soc-panel" style="max-width:800px;margin:0 auto;width:100%;">
+        <div class="soc-panel" style="max-width:850px;margin:0 auto;width:100%;">
           <div class="soc-panel-header">
             <div class="panel-heading">
-              <span>🔗</span> REAL-WORLD SECURITY INTEGRATIONS &amp; API POSTURE
+              <span>🔗</span> REAL-WORLD SECURITY INTEGRATIONS &amp; AI ENGINES
             </div>
-            <span class="tag-stream" style="color:#10b981;border-color:#10b981;">Mesh Connected</span>
+            <span class="tag-stream" id="badge-active-engine" style="color:#10b981;border-color:#10b981;">Engine: Initializing...</span>
           </div>
-          <div style="padding:24px;display:flex;flex-direction:column;gap:18px;">
+          <div style="padding:24px;display:flex;flex-direction:column;gap:20px;">
             <div style="font-size:12.5px;color:var(--text-secondary);line-height:1.6;">
-              SentiX is fully configured with automated mock &amp; heuristic fallbacks. To connect real-world threat intelligence feeds, corporate Slack channels, and Groq high-speed LLaMA 3.3-70B inference, configure the keys below:
+              Connect your free AI model key (either <strong>Google Gemini</strong> or <strong>Groq LLaMA 3.3-70B</strong>) to enable live real-world semantic reasoning across all domain agents. You can paste your key below or paste it in the chat!
             </div>
 
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-              <div style="background:#080d17;border:1px solid #1a253c;padding:14px;border-radius:8px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                  <strong style="font-size:13px;color:#fff;">Groq LLaMA 3.3-70B</strong>
-                  <span style="font-family:var(--font-mono);font-size:10px;color:#34d399;">● READY / STANDALONE</span>
+              <!-- Google Gemini Key -->
+              <div style="background:#080d17;border:1px solid #1a253c;padding:16px;border-radius:8px;display:flex;flex-direction:column;gap:8px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <strong style="font-size:13px;color:#fff;">Google Gemini API (Free)</strong>
+                  <span id="gemini-status-tag" style="font-family:var(--font-mono);font-size:10px;color:#94a3b8;">● STANDALONE</span>
                 </div>
-                <div style="font-size:11px;color:#64748b;margin-bottom:8px;">Ultra-fast LLM inference powering Chain-of-Thought reasoning.</div>
-                <input type="password" class="search-field" placeholder="gsk_..." value="" readonly style="background:#0b1120;">
+                <div style="font-size:11px;color:#64748b;">Get free at <em>aistudio.google.com</em>. Powers live threat Chain-of-Thought reasoning.</div>
+                <input type="password" id="input-gemini-key" class="search-field" placeholder="AIzaSy..." style="background:#0b1120;">
+                <button class="btn-exec-action" id="btn-save-gemini" style="align-self:flex-start;margin-top:4px;">Save Gemini Key</button>
               </div>
 
-              <div style="background:#080d17;border:1px solid #1a253c;padding:14px;border-radius:8px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                  <strong style="font-size:13px;color:#fff;">VirusTotal v3 API</strong>
-                  <span style="font-family:var(--font-mono);font-size:10px;color:#fbbf24;">● MOCK SEED ACTIVE</span>
+              <!-- Groq Key -->
+              <div style="background:#080d17;border:1px solid #1a253c;padding:16px;border-radius:8px;display:flex;flex-direction:column;gap:8px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <strong style="font-size:13px;color:#fff;">Groq LLaMA 3.3-70B (Free)</strong>
+                  <span id="groq-status-tag" style="font-family:var(--font-mono);font-size:10px;color:#94a3b8;">● STANDALONE</span>
                 </div>
-                <div style="font-size:11px;color:#64748b;margin-bottom:8px;">Malware hash and IP reputation scoring.</div>
-                <input type="password" class="search-field" placeholder="vt_api_key_..." value="" readonly style="background:#0b1120;">
+                <div style="font-size:11px;color:#64748b;">Get free at <em>console.groq.com</em>. Ultra-fast LLaMA 3.3-70B cloud inference.</div>
+                <input type="password" id="input-groq-key" class="search-field" placeholder="gsk_..." style="background:#0b1120;">
+                <button class="btn-exec-action" id="btn-save-groq" style="align-self:flex-start;margin-top:4px;">Save Groq Key</button>
               </div>
 
-              <div style="background:#080d17;border:1px solid #1a253c;padding:14px;border-radius:8px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                  <strong style="font-size:13px;color:#fff;">AbuseIPDB Threat Feed</strong>
-                  <span style="font-family:var(--font-mono);font-size:10px;color:#fbbf24;">● MOCK SEED ACTIVE</span>
+              <!-- VirusTotal API -->
+              <div style="background:#080d17;border:1px solid #1a253c;padding:16px;border-radius:8px;display:flex;flex-direction:column;gap:8px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <strong style="font-size:13px;color:#fff;">VirusTotal v3 (Free)</strong>
+                  <span style="font-family:var(--font-mono);font-size:10px;color:#fbbf24;">● MOCK SEED READY</span>
                 </div>
-                <div style="font-size:11px;color:#64748b;margin-bottom:8px;">Global IP abuse confidence percentage.</div>
-                <input type="password" class="search-field" placeholder="abuse_ipdb_key_..." value="" readonly style="background:#0b1120;">
+                <div style="font-size:11px;color:#64748b;">Get free at <em>virustotal.com</em>. Malware hash and URL scanning across 70+ engines.</div>
+                <input type="password" id="input-vt-key" class="search-field" placeholder="vt_api_key_..." style="background:#0b1120;">
+                <button class="btn-exec-action" id="btn-save-vt" style="align-self:flex-start;margin-top:4px;">Save VT Key</button>
               </div>
 
-              <div style="background:#080d17;border:1px solid #1a253c;padding:14px;border-radius:8px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                  <strong style="font-size:13px;color:#fff;">Slack / PagerDuty Webhook</strong>
-                  <span style="font-family:var(--font-mono);font-size:10px;color:#38bdf8;">● SIMULATED DISPATCH</span>
+              <!-- AbuseIPDB API -->
+              <div style="background:#080d17;border:1px solid #1a253c;padding:16px;border-radius:8px;display:flex;flex-direction:column;gap:8px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <strong style="font-size:13px;color:#fff;">AbuseIPDB (Free)</strong>
+                  <span style="font-family:var(--font-mono);font-size:10px;color:#fbbf24;">● MOCK SEED READY</span>
                 </div>
-                <div style="font-size:11px;color:#64748b;margin-bottom:8px;">Real-time incident dispatch to SOC channels.</div>
-                <input type="text" class="search-field" placeholder="https://hooks.slack.com/services/..." value="" readonly style="background:#0b1120;">
+                <div style="font-size:11px;color:#64748b;">Get free at <em>abuseipdb.com</em> (1000 free checks/day). External IP abuse score.</div>
+                <input type="password" id="input-abuse-key" class="search-field" placeholder="abuse_key_..." style="background:#0b1120;">
+                <button class="btn-exec-action" id="btn-save-abuse" style="align-self:flex-start;margin-top:4px;">Save AbuseIPDB Key</button>
               </div>
             </div>
           </div>
         </div>
       </div>
+
     </main>
 
     <!-- SIMULATION LAB MODAL -->

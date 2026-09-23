@@ -9,33 +9,63 @@ import json
 import logging
 import requests
 from typing import Dict, Any, Optional
-from backend.config import GROQ_API_KEY, GROQ_MODEL
+from backend.config import GROQ_API_KEY, GROQ_MODEL, GEMINI_API_KEY, GEMINI_MODEL
 
 logger = logging.getLogger("sentix.llm")
 
 
 class LLMClient:
-    def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
-        self.api_key = api_key or GROQ_API_KEY
-        self.model = model or GROQ_MODEL
-        self.endpoint = "https://api.groq.com/openai/v1/chat/completions"
+    def __init__(self):
+        self.groq_key = os.getenv("GROQ_API_KEY", GROQ_API_KEY).strip()
+        self.groq_model = os.getenv("GROQ_MODEL", GROQ_MODEL).strip()
+        self.gemini_key = os.getenv("GEMINI_API_KEY", GEMINI_API_KEY).strip()
+        self.gemini_model = os.getenv("GEMINI_MODEL", GEMINI_MODEL).strip()
+        self.groq_endpoint = "https://api.groq.com/openai/v1/chat/completions"
+
+    def is_gemini_available(self) -> bool:
+        return bool(self.gemini_key and len(self.gemini_key) > 5)
 
     def is_groq_available(self) -> bool:
-        return bool(self.api_key and len(self.api_key.strip()) > 5)
+        return bool(self.groq_key and len(self.groq_key) > 5)
 
     def generate_analysis(self, system_prompt: str, user_prompt: str) -> Dict[str, Any]:
         """
-        Executes query to Groq LLaMA 3.3-70B if API key is present;
+        Executes query to Google Gemini or Groq LLaMA 3.3-70B if API key is present;
         Otherwise executes deterministic domain-specific semantic reasoning fallback.
         """
+        # 1. Try Google Gemini API if key is present
+        if self.is_gemini_available():
+            try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.gemini_model}:generateContent?key={self.gemini_key}"
+                payload = {
+                    "system_instruction": {"parts": [{"text": system_prompt}]},
+                    "contents": [{"parts": [{"text": user_prompt}]}],
+                    "generationConfig": {
+                        "temperature": 0.2,
+                        "response_mime_type": "application/json"
+                    }
+                }
+                res = requests.post(url, json=payload, timeout=12)
+                if res.status_code == 200:
+                    data = res.json()
+                    content = data["candidates"][0]["content"]["parts"][0]["text"]
+                    parsed = json.loads(content)
+                    parsed["llm_engine"] = f"Google {self.gemini_model}"
+                    return parsed
+                else:
+                    logger.warning(f"Gemini API returned HTTP {res.status_code}: {res.text[:120]}")
+            except Exception as e:
+                logger.warning(f"Gemini API call failed ({e}). Checking secondary engines.")
+
+        # 2. Try Groq LLaMA 3.3-70B if key is present
         if self.is_groq_available():
             try:
                 headers = {
-                    "Authorization": f"Bearer {self.api_key.strip()}",
+                    "Authorization": f"Bearer {self.groq_key}",
                     "Content-Type": "application/json"
                 }
                 payload = {
-                    "model": self.model,
+                    "model": self.groq_model,
                     "messages": [
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_prompt}
@@ -43,20 +73,21 @@ class LLMClient:
                     "temperature": 0.2,
                     "response_format": {"type": "json_object"}
                 }
-                response = requests.post(self.endpoint, headers=headers, json=payload, timeout=12)
+                response = requests.post(self.groq_endpoint, headers=headers, json=payload, timeout=12)
                 if response.status_code == 200:
                     data = response.json()
                     content = data["choices"][0]["message"]["content"]
                     parsed = json.loads(content)
-                    parsed["llm_engine"] = f"Groq {self.model}"
+                    parsed["llm_engine"] = f"Groq {self.groq_model}"
                     return parsed
                 else:
-                    logger.warning(f"Groq API returned HTTP {response.status_code}. Using local semantic engine.")
+                    logger.warning(f"Groq API returned HTTP {response.status_code}.")
             except Exception as e:
                 logger.warning(f"Groq API call failed ({e}). Falling back to local semantic engine.")
 
-        # Fallback to local heuristic / NLP semantic reasoning
+        # 3. Fallback to local heuristic / NLP semantic reasoning
         return self._local_semantic_reasoning(system_prompt, user_prompt)
+
 
     def _local_semantic_reasoning(self, system_prompt: str, user_prompt: str) -> Dict[str, Any]:
         """
