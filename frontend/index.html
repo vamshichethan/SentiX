@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SentinelX - Autonomous Multi-Agent Security Operations Center</title>
+  <meta name="description" content="SentiX: An AI-Powered Autonomous Security Operations Center utilizing specialized multi-agent LLM reasoning, anomaly detection, and automated containment.">
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>">
+</head>
+<body>
+  <div id="app-container">
+    <!-- MASTER HEADER -->
+    <header class="soc-header">
+      <div class="brand-section">
+        <div class="brand-logo">🛡</div>
+        <div class="brand-title-wrap">
+          <div class="brand-title-row">
+            <span class="brand-title">SentinelX</span>
+            <span class="badge-soc">AUTONOMOUS SOC</span>
+          </div>
+          <span class="brand-subtitle">AI-Driven Multi-Agent Threat Detection &amp; Containment Mesh</span>
+        </div>
+      </div>
+
+      <nav class="nav-tabs">
+        <button class="nav-tab active">
+          <span>⚡</span> SOC Console
+        </button>
+        <button class="nav-tab">
+          <span>🔔</span> Slack &amp; PagerDuty
+        </button>
+        <button class="nav-tab">
+          <span>📋</span> Playbook Builder
+        </button>
+        <button class="nav-tab" id="btn-open-sim" style="color:#fbbf24;border-color:rgba(245,158,11,0.4);">
+          <span>🧪</span> Simulation Lab
+        </button>
+      </nav>
+
+      <div class="header-controls">
+        <div class="defcon-badge" id="defcon-indicator">
+          <span class="pulse-dot"></span>
+          DEFCON 2
+        </div>
+        <div class="utc-clock">
+          <span>🕒</span>
+          <span id="utc-clock-time">2026-08-07 19:03:08 UTC</span>
+        </div>
+        <button class="btn-feed-ctrl" id="btn-feed-toggle">
+          <span>⏸</span> PAUSE FEED
+        </button>
+      </div>
+    </header>
+
+    <main class="main-wrapper">
+      <!-- TOP STATS CARDS -->
+      <section class="stats-grid">
+        <div class="stat-card red">
+          <div>
+            <div class="stat-label">Critical Incidents</div>
+            <div class="stat-value" id="stat-critical">212</div>
+            <div class="stat-sub">Requiring analyst confirmation</div>
+          </div>
+          <div class="stat-icon" style="color:#ef4444;">🛡</div>
+        </div>
+
+        <div class="stat-card green">
+          <div>
+            <div class="stat-label">Auto-Contained</div>
+            <div class="stat-value" id="stat-contained">42</div>
+            <div class="stat-sub">Response agent actions executed</div>
+          </div>
+          <div class="stat-icon" style="color:#10b981;">🔒</div>
+        </div>
+
+        <div class="stat-card gold">
+          <div>
+            <div class="stat-label">Mean Risk Score</div>
+            <div class="stat-value" id="stat-risk">78</div>
+            <div class="stat-sub">Weighted across all active alerts</div>
+          </div>
+          <div class="stat-icon" style="color:#f59e0b;">⚡</div>
+        </div>
+
+        <div class="stat-card cyan">
+          <div>
+            <div class="stat-label">Mean Time to Respond</div>
+            <div class="stat-value" id="stat-mttr">41s</div>
+            <div class="stat-sub">Detection to containment pipeline</div>
+          </div>
+          <div class="stat-icon" style="color:#06b6d4;">📈</div>
+        </div>
+      </section>
+
+      <!-- SECTION 1: ALERT STREAM & AI INVESTIGATION DOSSIER (Slide 11) -->
+      <section class="console-row">
+        <!-- LEFT: LIVE ALERT STREAM -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <span style="color:#10b981;">((•))</span> LIVE ALERT STREAM
+            </div>
+            <span class="panel-tag">websocket stream</span>
+          </div>
+
+          <div class="filter-bar">
+            <div class="search-input-wrap">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="search-alerts" class="search-input" placeholder="Search IP, asset, user, technique...">
+            </div>
+            <div class="filter-pills">
+              <button class="pill-btn active" data-sev="ALL">ALL</button>
+              <button class="pill-btn" data-sev="CRITICAL">CRITICAL</button>
+              <button class="pill-btn" data-sev="HIGH">HIGH</button>
+              <button class="pill-btn" data-sev="MEDIUM">MEDIUM</button>
+              <button class="pill-btn" data-sev="LOW">LOW</button>
+            </div>
+          </div>
+
+          <div class="alert-stream-list" id="alert-stream-list">
+            <!-- Dynamic alerts loaded via JavaScript -->
+          </div>
+        </div>
+
+        <!-- RIGHT: INVESTIGATION DOSSIER (AI AGENT) -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <span style="color:#f59e0b;">⚙</span> INVESTIGATION DOSSIER (AI AGENT)
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <span class="panel-tag" style="color:#34d399;border-color:#10b981;">✦ LLaMA 3.3-70B Versatile</span>
+              <span class="panel-tag" id="dossier-alert-id" style="color:#94a3b8;border-color:#334155;">0ae0f1da...</span>
+            </div>
+          </div>
+
+          <div class="dossier-body">
+            <div class="dossier-top">
+              <div class="dossier-header-info">
+                <span class="dossier-cat-badge" id="dossier-cat-badge">PRIVILEGE ESCALATION</span>
+                <h2 class="dossier-title" id="dossier-title">Kerberoasting - mass TGS-REQ with RC4 encryption</h2>
+              </div>
+              <div class="dossier-actions">
+                <button class="btn-dossier-act" id="btn-create-p1">Create P1 Ticket</button>
+                <button class="btn-dossier-act danger" id="btn-edr-isolate">EDR Isolate</button>
+              </div>
+            </div>
+
+            <!-- METADATA GRID -->
+            <div class="dossier-meta-grid">
+              <div class="meta-field">
+                <span class="meta-key">Asset</span>
+                <span class="meta-val" id="meta-asset">10.0.4.10 (Core-DB)</span>
+              </div>
+              <div class="meta-field">
+                <span class="meta-key">Source IP</span>
+                <span class="meta-val" id="meta-src-ip">103.224.182.9</span>
+              </div>
+              <div class="meta-field">
+                <span class="meta-key">Protocol</span>
+                <span class="meta-val" id="meta-protocol">HTTPS / RPC</span>
+              </div>
+              <div class="meta-field">
+                <span class="meta-key">ATT&amp;CK</span>
+                <span class="meta-val" id="meta-technique">Privilege Escalation</span>
+              </div>
+            </div>
+
+            <!-- METRIC BARS -->
+            <div class="metrics-bars-box">
+              <div class="bar-row">
+                <div class="bar-header">
+                  <span>Composite risk score</span>
+                  <span id="val-composite" style="color:#f87171;font-weight:700;">77</span>
+                </div>
+                <div class="bar-track">
+                  <div class="bar-fill red" id="bar-composite" style="width: 77%;"></div>
+                </div>
+              </div>
+
+              <div class="bar-row">
+                <div class="bar-header">
+                  <span>Isolation Forest anomaly index</span>
+                  <span id="val-if" style="color:#38bdf8;font-weight:700;">87</span>
+                </div>
+                <div class="bar-track">
+                  <div class="bar-fill cyan" id="bar-if" style="width: 87%;"></div>
+                </div>
+              </div>
+
+              <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:11px;">
+                <span style="color:var(--text-muted);">Model confidence</span>
+                <span id="val-confidence" style="color:#34d399;font-weight:700;">99%</span>
+              </div>
+            </div>
+
+            <!-- THREAT INTEL ROW -->
+            <div class="threat-intel-row">
+              <div class="intel-badge">
+                <span class="intel-name">VirusTotal</span>
+                <span class="intel-val" id="intel-vt">8 / 72</span>
+              </div>
+              <div class="intel-badge">
+                <span class="intel-name">AbuseIPDB</span>
+                <span class="intel-val" id="intel-abuse" style="color:#f87171;">34% (Suspicious)</span>
+              </div>
+              <div class="intel-badge">
+                <span class="intel-name">OTX Pulses</span>
+                <span class="intel-val" id="intel-otx">14 Matches</span>
+              </div>
+            </div>
+
+            <!-- EVIDENCE & CHAIN-OF-THOUGHT -->
+            <div class="evidence-section">
+              <div class="evidence-header">AI Chain-of-Thought Reasoning</div>
+              <div class="cot-container" id="dossier-cot">
+                <!-- Injected via JavaScript -->
+              </div>
+              <div class="explanation-text" id="dossier-explanation">
+                Loading analytical reasoning dossier...
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 2: MAP, VOLUME & AUTOMATED RESPONSE (Slide 12) -->
+      <section class="bottom-grid">
+        <!-- MAP -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <span style="color:#06b6d4;">🌐</span> GLOBAL ATTACK ORIGIN - LIVE GEOLOCATION
+            </div>
+            <span class="panel-tag" style="color:#f87171;border-color:rgba(239,68,68,0.4);">5 active vectors</span>
+          </div>
+          <div class="map-container">
+            <canvas id="attack-map-canvas"></canvas>
+          </div>
+        </div>
+
+        <!-- VOLUME CHART -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <span style="color:#f59e0b;">📈</span> DETECTION VOLUME (60 MIN)
+            </div>
+            <span class="panel-tag">Recharts Area</span>
+          </div>
+          <div class="chart-container">
+            <canvas id="volume-chart-canvas"></canvas>
+          </div>
+        </div>
+
+        <!-- AUTOMATED RESPONSE ORCHESTRATION -->
+        <div class="orchestration-panel">
+          <div class="orch-header">
+            <div>
+              <div class="panel-title" style="margin-bottom:4px;">
+                <span style="color:#10b981;">⚡</span> AUTOMATED RESPONSE ORCHESTRATION
+              </div>
+              <div style="font-size:11px;color:#64748b;">
+                Manual mode - threats are plotted &amp; logged, but analyst confirmation is required to act.
+              </div>
+            </div>
+            <div class="orch-mode-toggle">
+              <span class="orch-mode-label">MANUAL OVERRIDE</span>
+              <button class="pill-btn" id="mode-toggle-btn" style="background:rgba(239,68,68,0.15);color:#fca5a5;border-color:#ef4444;font-weight:700;">
+                AUTO OFF
+              </button>
+            </div>
+          </div>
+
+          <div class="handlers-grid">
+            <div class="handler-card">
+              <div>
+                <span class="handler-num">ACTION HANDLER 01</span>
+                <div class="handler-name">Block IP</div>
+                <div class="handler-desc">WAF / Edge perimeter ban</div>
+              </div>
+              <button class="btn-test-exec" data-action="BLOCK_IP" data-target="203.175.188.1">Test Execute</button>
+            </div>
+
+            <div class="handler-card">
+              <div>
+                <span class="handler-num">ACTION HANDLER 02</span>
+                <div class="handler-name">Isolate Host</div>
+                <div class="handler-desc">EDR network isolation</div>
+              </div>
+              <button class="btn-test-exec" data-action="ISOLATE_HOST" data-target="10.0.4.10">Test Execute</button>
+            </div>
+
+            <div class="handler-card">
+              <div>
+                <span class="handler-num">ACTION HANDLER 03</span>
+                <div class="handler-name">Disable User</div>
+                <div class="handler-desc">Active Directory lockout</div>
+              </div>
+              <button class="btn-test-exec" data-action="DISABLE_USER" data-target="admin_service">Test Execute</button>
+            </div>
+
+            <div class="handler-card">
+              <div>
+                <span class="handler-num">ACTION HANDLER 04</span>
+                <div class="handler-name">Generate Alert</div>
+                <div class="handler-desc">System level notification</div>
+              </div>
+              <button class="btn-test-exec" data-action="GENERATE_ALERT" data-target="Core SOC Dispatch">Test Execute</button>
+            </div>
+
+            <div class="handler-card">
+              <div>
+                <span class="handler-num">ACTION HANDLER 05</span>
+                <div class="handler-name">Notify Analyst</div>
+                <div class="handler-desc">Slack / PagerDuty webhook</div>
+              </div>
+              <button class="btn-test-exec" data-action="NOTIFY_ANALYST" data-target="#soc-channel">Test Execute</button>
+            </div>
+
+            <div class="handler-card">
+              <div>
+                <span class="handler-num">ACTION HANDLER 06</span>
+                <div class="handler-name">Create Report</div>
+                <div class="handler-desc">Markdown/JSON dossier</div>
+              </div>
+              <button class="btn-test-exec" data-action="CREATE_REPORT" data-target="INCIDENT-DOSSIER-2026">Test Execute</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 3: AGENT MESH & CONTAINMENT LEDGER (Slide 13) -->
+      <section class="console-row" style="grid-template-columns: 100%;">
+        <!-- AGENT MESH -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <span style="color:#06b6d4;">⚙</span> AUTONOMOUS AGENT MESH PIPELINE
+            </div>
+            <span class="panel-tag" id="events-today-badge">18,513 events processed today</span>
+          </div>
+          <div class="mesh-grid" id="agent-mesh-grid">
+            <!-- 12 Agents loaded dynamically -->
+          </div>
+        </div>
+
+        <!-- ACTION HISTORY - CONTAINMENT LEDGER -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <span style="color:#10b981;">📋</span> ACTION HISTORY — CONTAINMENT LEDGER
+            </div>
+            <span class="panel-tag" id="ledger-count-badge">28 events logged</span>
+          </div>
+          <div class="ledger-table-wrap">
+            <table class="ledger-table">
+              <thead>
+                <tr>
+                  <th>TIMESTAMP (UTC)</th>
+                  <th>ACTION</th>
+                  <th>TARGET IP / ASSET</th>
+                  <th>SEVERITY</th>
+                  <th>MODE</th>
+                  <th>EXECUTED BY</th>
+                </tr>
+              </thead>
+              <tbody id="ledger-table-body">
+                <!-- Containment rows loaded dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- SIMULATION LAB MODAL -->
+    <div class="modal-backdrop" id="sim-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div class="modal-title">🧪 SentiX Multi-Agent Attack Simulation Lab</div>
+          <button class="btn-close-modal" id="btn-close-modal">&times;</button>
+        </div>
+        <p style="font-size:12px;color:#94a3b8;line-height:1.4;">
+          Test the end-to-end multi-agent detection, correlation, and response pipeline as described in the IEEE Access 2025 research paper:
+          <strong>Email Verification Agent</strong> (Spearphishing), <strong>Log Analyzer Agent</strong> (RCE / Brute force), 
+          <strong>IP Range Analyzer Agent</strong> (NVD CVEs), and the <strong>Contextual Recommendation System</strong>.
+        </p>
+
+        <div style="background:#090e18;padding:12px;border-radius:6px;border:1px solid #1e293b;font-family:var(--font-mono);font-size:11px;color:#38bdf8;">
+          <div>Scenario: Coordinated Multi-Vector APT Campaign</div>
+          <div style="color:#64748b;margin-top:4px;">
+            1. Phishing lure with payload delivered from 185.220.101.5<br>
+            2. High-frequency brute force &amp; heap corruption on 10.0.4.10 from 203.175.188.1<br>
+            3. Network scan of 192.168.14.0/24 mapping CVE-2024-38077 (CVSS 9.8)<br>
+            4. Cross-domain correlation &amp; automated containment execution
+          </div>
+        </div>
+
+        <button class="btn-primary" id="btn-run-sim-action">
+          TRIGGER MULTI-VECTOR ATTACK SIMULATION
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
